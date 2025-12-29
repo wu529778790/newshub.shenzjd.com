@@ -133,7 +133,7 @@ export class Profiler {
       const profile = Profiler.end(id);
 
       if (profile && log && profile.duration >= threshold) {
-        logger.warn(`[Profiler] ${name} took ${profile.duration}ms (threshold: ${threshold}ms)`;
+        logger.warn(`[Profiler] ${name} took ${profile.duration}ms (threshold: ${threshold}ms)`);
       }
 
       return result;

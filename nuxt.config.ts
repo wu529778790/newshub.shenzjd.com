@@ -12,7 +12,6 @@ export default defineNuxtConfig({
   // 模块
   modules: [
     "@nuxtjs/tailwindcss",
-    "@nuxtjs/daisyui",
   ],
 
   // 页面路由
@@ -139,16 +138,6 @@ export default defineNuxtConfig({
     },
   },
 
-  // DaisyUI 配置
-  daisyui: {
-    themes: ["light", "dark", "cupcake", "forest"],
-    base: true,
-    styled: true,
-    utils: true,
-    rtl: false,
-    prefix: "",
-  },
-
   // 开发服务器配置
   devServer: {
     host: "0.0.0.0",
@@ -180,7 +169,7 @@ export default defineNuxtConfig({
           manualChunks: {
             // 拆分大型依赖
             "vue-vendor": ["vue", "vue-router"],
-            "ui-vendor": ["@nuxtjs/tailwindcss", "@nuxtjs/daisyui"],
+            "ui-vendor": ["@nuxtjs/tailwindcss"],
             "utils": ["dayjs", "cheerio", "fast-xml-parser"],
             "image": ["html2canvas"],
           },

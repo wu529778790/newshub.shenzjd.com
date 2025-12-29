@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
-import { MetricsManager, CallTracer, Profiler } from '~/server/utils/metrics';
+import { MetricsManager } from '~/server/utils/metrics';
+import { CallTracer, Profiler } from '~/server/utils/profiler';
 
 describe('MetricsManager', () => {
   let metrics: MetricsManager;

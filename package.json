@@ -47,7 +47,6 @@
   "devDependencies": {
     "@nuxt/kit": "^4.0.3",
     "@nuxt/test-utils": "^3.19.2",
-    "@nuxtjs/daisyui": "^1.1.0",
     "@types/md5": "^2.3.5",
     "@vitest/ui": "^3.2.4",
     "cross-env": "^10.0.0",

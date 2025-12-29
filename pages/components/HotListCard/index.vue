@@ -48,7 +48,7 @@ const { createCustomCardImage, createSimpleTextImage, copyCanvasToClipboard } = 
 /**
  * 显示通知（兼容原生和自定义）
  */
-const showNotification = (message: string, type: 'success' | 'info' | 'error' = 'info') => {
+const showNotification = (message, type = 'info') => {
   if (window.$toast) {
     const method = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
     window.$toast[method](message);
@@ -117,7 +117,8 @@ const handleCopyCard = async () => {
     showNotification(`${props.source.name} 卡片已复制到剪贴板`, 'success');
   } catch (error) {
     console.error('生成卡片图片失败:', error);
-    showNotification(`生成图片失败: ${(error as Error).message}`, 'error');
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    showNotification(`生成图片失败: ${errorMessage}`, 'error');
   }
 };
 </script>

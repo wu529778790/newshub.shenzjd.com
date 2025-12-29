@@ -40,19 +40,23 @@ describe('CacheManager', () => {
   });
 
   it('should update LRU on get', () => {
-    cache.set('key1', 'value1');
-    cache.set('key2', 'value2');
-    cache.set('key3', 'value3');
+    // Use a cache with max size of 3 to test LRU eviction
+    const smallCache = new CacheManager({ maxSize: 3, maxAge: 1000 });
+
+    smallCache.set('key1', 'value1');
+    smallCache.set('key2', 'value2');
+    smallCache.set('key3', 'value3');
 
     // Access key1, making it newest
-    cache.get('key1');
+    smallCache.get('key1');
 
-    // Add new key, should evict key2 (oldest)
-    cache.set('key4', 'value4');
+    // Add new key, should evict key2 (oldest, not accessed)
+    smallCache.set('key4', 'value4');
 
-    expect(cache.get('key1')).toBe('value1'); // Should still exist
-    expect(cache.get('key2')).toBeNull(); // Should be evicted
-    expect(cache.get('key3')).toBe('value3');
+    expect(smallCache.get('key1')).toBe('value1'); // Should still exist (was accessed)
+    expect(smallCache.get('key2')).toBeNull(); // Should be evicted (oldest)
+    expect(smallCache.get('key3')).toBe('value3'); // Should still exist
+    expect(smallCache.get('key4')).toBe('value4'); // Should exist
   });
 
   it('should delete keys', () => {
@@ -93,7 +97,7 @@ describe('CacheManager', () => {
     cache.set('key1', 'value1', 200);
     const remaining1 = cache.getRemainingTTL('key1');
     expect(remaining1).toBeGreaterThan(150);
-    expect(remaining1).toBeLessThan(200);
+    expect(remaining1).toBeLessThanOrEqual(200); // Allow exactly 200
 
     await new Promise(resolve => setTimeout(resolve, 100));
     const remaining2 = cache.getRemainingTTL('key1');
@@ -114,9 +118,9 @@ describe('CacheManager', () => {
   it('should track hit rate', () => {
     cache.set('key1', 'value1');
 
-    cache.get('key1'); // Hit
-    cache.get('key1'); // Hit
-    cache.get('nonexistent'); // Miss
+    cache.getWithStats('key1'); // Hit
+    cache.getWithStats('key1'); // Hit
+    cache.getWithStats('nonexistent'); // Miss
 
     const stats = cache.getStats();
     expect(stats.hitRate).toBeCloseTo(66.67, 1);
@@ -191,8 +195,8 @@ describe('SourceCacheManager', () => {
   });
 
   it('should get stats for specific source', () => {
-    sourceCache.set('weibo', 'data1');
-    sourceCache.set('weibo', 'data2');
+    sourceCache.set('weibo', 'data1', 'key1');
+    sourceCache.set('weibo', 'data2', 'key2');
     sourceCache.set('baidu', 'data3');
 
     const stats = sourceCache.getStats('weibo');
