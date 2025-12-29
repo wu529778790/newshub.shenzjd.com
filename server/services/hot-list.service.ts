@@ -34,7 +34,6 @@ import getToutiaoHotList from "~/server/sources/toutiao";
 
 import getWallstreetcnHotList from "~/server/sources/wallstreetcn";
 import getXueqiuHotList from "~/server/sources/xueqiu";
-import getZaobaoHotList from "~/server/sources/zaobao";
 
 import getCoolapkHotList from "~/server/sources/coolapk";
 import type { NewsItem } from "@shared/types";
@@ -78,8 +77,6 @@ const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
   "wallstreetcn-news": getWallstreetcnHotList["wallstreetcn-news"]!,
   "wallstreetcn-hot": getWallstreetcnHotList["wallstreetcn-hot"]!,
   xueqiu: getXueqiuHotList.xueqiu!,
-
-  zaobao: getZaobaoHotList,
 
   coolapk: getCoolapkHotList.coolapk!,
 };

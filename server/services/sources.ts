@@ -169,12 +169,6 @@ export const sources: Source[] = [
   },
 
   {
-    id: "zaobao",
-    name: "早报",
-    home: "https://www.zaobao.com/realtime",
-  },
-
-  {
     id: "coolapk",
     name: "酷安",
     home: "https://www.coolapk.com",
