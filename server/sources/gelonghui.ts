@@ -47,7 +47,8 @@ export default defineSource(async () => {
       let pubDate: number | undefined;
       if (timeText && timeText !== "刚刚") {
         try {
-          pubDate = parseRelativeDate(timeText, "Asia/Shanghai").valueOf();
+          const parsed = parseRelativeDate(timeText, "Asia/Shanghai");
+          pubDate = typeof parsed === "number" ? parsed : parsed.valueOf();
         } catch (e) {
           pubDate = new Date().getTime();
         }
@@ -60,7 +61,8 @@ export default defineSource(async () => {
         extra: {
           info: summary || undefined,
           date: pubDate,
-          image: imgSrc && imgSrc !== "/images/default-image.jpg" ? imgSrc : undefined,
+          // 使用 icon 而不是 image，符合 NewsItem 类型定义
+          icon: imgSrc && imgSrc !== "/images/default-image.jpg" ? { url: imgSrc, scale: 1 } : undefined,
         },
       });
     });

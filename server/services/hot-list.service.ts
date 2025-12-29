@@ -1,3 +1,8 @@
+/**
+ * @deprecated 该文件已过时，请使用 ~/server/services/source-manager.ts
+ * 保留此文件以确保向后兼容，将在未来版本中移除
+ */
+
 import getWeiboHotList from "~/server/sources/weibo";
 import { getZhihuHotList } from "~/server/sources/zhihu";
 import { get36krHotList } from "~/server/sources/_36kr";
@@ -37,7 +42,9 @@ import getXueqiuHotList from "~/server/sources/xueqiu";
 
 import getCoolapkHotList from "~/server/sources/coolapk";
 import type { NewsItem } from "@shared/types";
+import { migrateFromOldService } from "./source-initializer";
 
+// 保持旧的 fetcherMap 用于向后兼容
 const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
   weibo: getWeiboHotList.weibo!,
   zhihu: getZhihuHotList,
@@ -73,7 +80,6 @@ const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
   toutiao: getToutiaoHotList,
 
   wallstreetcn: getWallstreetcnHotList.wallstreetcn!,
-
   "wallstreetcn-news": getWallstreetcnHotList["wallstreetcn-news"]!,
   "wallstreetcn-hot": getWallstreetcnHotList["wallstreetcn-hot"]!,
   xueqiu: getXueqiuHotList.xueqiu!,
@@ -81,10 +87,21 @@ const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
   coolapk: getCoolapkHotList.coolapk!,
 };
 
+/**
+ * @deprecated 使用 sourceManager.getHotList() 替代
+ */
 export async function getHotList(id: string): Promise<NewsItem[]> {
   const fetcher = fetcherMap[id];
   if (!fetcher) {
     throw new Error("Invalid source id");
   }
   return await fetcher();
+}
+
+/**
+ * 初始化旧服务到新注册表的迁移
+ * 在应用启动时调用一次
+ */
+export function initializeLegacyMigration() {
+  migrateFromOldService(fetcherMap);
 }
