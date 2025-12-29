@@ -1,3 +1,8 @@
+/**
+ * @deprecated 该文件已过时，请使用 types-new.ts
+ * 保留此文件以确保向后兼容，将在未来版本中移除
+ */
+
 // import type { colors } from "unocss/preset-mini"
 // 临时使用简化的颜色类型定义
 type Colors = {
