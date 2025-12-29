@@ -96,9 +96,11 @@ export default defineNuxtConfig({
     },
   },
 
-  // 后端插件
+  // 后端插件（按顺序执行）
   plugins: [
-    "~/server/plugins/source-registry.ts",
+    "~/server/plugins/source-registry.ts",  // 数据源注册
+    "~/server/plugins/request-logger.ts",   // 请求日志
+    "~/server/plugins/performance-monitor.ts", // 性能监控
   ],
 
   // 路径别名
