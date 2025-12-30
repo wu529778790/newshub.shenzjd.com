@@ -18,6 +18,7 @@ yarn-error.log*
 Dockerfile
 .dockerignore
 docker-compose.yml
+!docker-start.mjs
 
 # Testing
 test

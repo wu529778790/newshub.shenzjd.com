@@ -37,6 +37,9 @@ RUN pnpm install --frozen-lockfile --prod
 # 从构建阶段复制构建产物
 COPY --from=base /app/.output ./.output
 
+# 复制 Docker 启动脚本
+COPY --from=base /app/docker-start.mjs ./
+
 # 创建非 root 用户
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nuxt
@@ -51,4 +54,4 @@ USER nuxt
 EXPOSE 3000
 
 # 启动应用
-CMD ["node", ".output/server/index.mjs"]
+CMD ["node", "docker-start.mjs"]
