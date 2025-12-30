@@ -46,17 +46,8 @@ import { migrateFromOldService } from "./source-initializer";
 
 // 新增数据源导入
 import getHackerNewsList from "~/server/sources/hackernews";
-import getProductHuntList from "~/server/sources/producthunt";
-import getEastmoneyList from "~/server/sources/eastmoney";
 import getBBCNewsList from "~/server/sources/bbcnews";
 import getV2exnewList from "~/server/sources/v2exnew";
-
-// 高优先级新增数据源
-import getXiaohongshuList from "~/server/sources/xiaohongshu";
-import getDoubanList from "~/server/sources/douban";
-import getTwitterList from "~/server/sources/twitter";
-import getGoogleTrendsList from "~/server/sources/google-trends";
-import getV2exList from "~/server/sources/v2ex";
 
 // 保持旧的 fetcherMap 用于向后兼容
 const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
@@ -102,23 +93,12 @@ const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
 
   // 新增数据源
   hackernews: getHackerNewsList,
-  producthunt: getProductHuntList,
-  eastmoney: getEastmoneyList,
   bbcnews: getBBCNewsList,
   v2exnew: getV2exnewList,
-
-  // 高优先级新增数据源
-  xiaohongshu: getXiaohongshuList.xiaohongshu!,
-  "douban-movie": getDoubanList["douban-movie"]!,
-  "douban-book": getDoubanList["douban-book"]!,
-  "douban-music": getDoubanList["douban-music"]!,
-  twitter: getTwitterList.twitter!,
-  "google-trends": getGoogleTrendsList["google-trends"]!,
 
   // 主源映射（redirect 到第一个子源）
   bilibili: getBilibiliHotSearch,
   pcbeta: getPcbetaHotList["pcbeta-windows11"]!,
-  v2ex: getV2exList["v2ex-share"]!,
 };
 
 /**

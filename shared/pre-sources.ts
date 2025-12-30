@@ -296,24 +296,6 @@ export const originSources = {
     interval: Time.Fast,
   },
 
-  producthunt: {
-    name: "Product Hunt",
-    type: "hottest",
-    column: "tech",
-    color: "orange",
-    home: "https://www.producthunt.com",
-    interval: Time.Common,
-  },
-
-  eastmoney: {
-    name: "东方财富",
-    type: "realtime",
-    column: "finance",
-    color: "blue",
-    home: "https://finance.eastmoney.com",
-    interval: Time.Realtime,
-  },
-
   bbcnews: {
     name: "BBC News",
     type: "hottest",
@@ -330,61 +312,6 @@ export const originSources = {
     color: "blue",
     home: "https://www.v2ex.com",
     interval: Time.Common,
-  },
-
-  // 新增高优先级数据源
-  xiaohongshu: {
-    name: "小红书",
-    type: "hottest",
-    column: "china",
-    color: "pink",
-    home: "https://www.xiaohongshu.com",
-    interval: Time.Default,
-  },
-
-  "douban-movie": {
-    name: "豆瓣电影",
-    type: "hottest",
-    column: "culture",
-    color: "green",
-    home: "https://movie.douban.com",
-    interval: Time.Common,
-  },
-
-  "douban-book": {
-    name: "豆瓣图书",
-    type: "hottest",
-    column: "culture",
-    color: "green",
-    home: "https://book.douban.com",
-    interval: Time.Common,
-  },
-
-  "douban-music": {
-    name: "豆瓣音乐",
-    type: "hottest",
-    column: "culture",
-    color: "green",
-    home: "https://music.douban.com",
-    interval: Time.Common,
-  },
-
-  twitter: {
-    name: "Twitter 趋势",
-    type: "hottest",
-    column: "world",
-    color: "blue",
-    home: "https://twitter.com",
-    interval: Time.Fast,
-  },
-
-  "google-trends": {
-    name: "Google Trends",
-    type: "hottest",
-    column: "world",
-    color: "red",
-    home: "https://trends.google.com",
-    interval: Time.Fast,
   },
 } as const satisfies Record<string, OriginSource>;
 
