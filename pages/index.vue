@@ -18,6 +18,19 @@
     <main v-else class="container mx-auto px-6 py-8">
       <!-- 分类筛选栏 -->
       <div class="mb-6 flex flex-wrap items-center gap-2">
+        <!-- 全部按钮放在最前面 -->
+        <button
+          @click="activeColumn = 'all'"
+          class="btn btn-sm"
+          :class="[
+            activeColumn === 'all'
+              ? 'btn-primary'
+              : 'btn-ghost border border-base-300'
+          ]">
+          全部
+          <span class="ml-1 opacity-70 text-xs">({{ sources.length }})</span>
+        </button>
+        <!-- 其他分类按钮 -->
         <button
           v-for="col in columns"
           :key="col.id"
@@ -30,17 +43,6 @@
           ]">
           {{ col.name }}
           <span class="ml-1 opacity-70 text-xs">({{ col.count }})</span>
-        </button>
-        <button
-          @click="activeColumn = 'all'"
-          class="btn btn-sm"
-          :class="[
-            activeColumn === 'all'
-              ? 'btn-primary'
-              : 'btn-ghost border border-base-300'
-          ]">
-          全部
-          <span class="ml-1 opacity-70 text-xs">({{ sources.length }})</span>
         </button>
       </div>
 
