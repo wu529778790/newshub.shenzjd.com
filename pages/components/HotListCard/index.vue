@@ -3,7 +3,7 @@
     :ref="(el) => $emit('setElementRef', el)"
     :key="source.id"
     :data-source-id="source.id"
-    class="group relative bg-white/50 dark:bg-base-200/50 backdrop-blur-sm border rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 hover:-translate-y-1 overflow-hidden"
+    class="group relative bg-white/50 dark:bg-base-200/50 backdrop-blur-sm border rounded-2xl shadow-sm md:hover:shadow-lg transition-all duration-300 md:hover:-translate-y-1 overflow-hidden"
     :class="[
       isPinned
         ? 'border-primary ring-2 ring-primary/20 bg-gradient-to-br from-primary/5 via-white/50 to-white/50 dark:from-primary/10 dark:via-base-200/50 dark:to-base-200/50'

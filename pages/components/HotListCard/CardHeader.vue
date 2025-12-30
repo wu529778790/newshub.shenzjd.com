@@ -1,5 +1,5 @@
 <template>
-  <header class="relative p-6 pb-4 border-b border-base-300/30">
+  <header class="relative p-4 md:p-6 pb-3 md:pb-4 border-b border-base-300/30">
     <div class="flex items-center justify-between">
       <div class="flex items-center space-x-3 flex-1 min-w-0">
         <div
@@ -29,9 +29,9 @@
       </div>
 
       <div class="flex items-center space-x-1 flex-shrink-0">
-        <!-- 置顶按钮 -->
+        <!-- 置顶按钮 - 移动端始终显示，桌面端 hover 显示 -->
         <button
-          class="btn btn-ghost btn-sm btn-circle opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-warning/10"
+          class="btn btn-ghost btn-sm btn-circle md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 hover:bg-warning/10"
           @click="$emit('togglePin', source.id)"
           :title="isPinned ? `取消置顶 ${source.name}` : `置顶 ${source.name}`">
           <svg
@@ -55,9 +55,9 @@
           </svg>
         </button>
 
-        <!-- 刷新按钮 -->
+        <!-- 刷新按钮 - 移动端始终显示，桌面端 hover 显示 -->
         <button
-          class="btn btn-ghost btn-sm btn-circle opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-primary/10"
+          class="btn btn-ghost btn-sm btn-circle md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 hover:bg-primary/10"
           @click="$emit('refresh', source)"
           :disabled="loading"
           :title="`刷新 ${source.name}`">
@@ -78,9 +78,9 @@
             class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
         </button>
 
-        <!-- 复制卡片按钮 -->
+        <!-- 复制卡片按钮 - 移动端始终显示，桌面端 hover 显示 -->
         <button
-          class="btn btn-ghost btn-sm btn-circle opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-success/10"
+          class="btn btn-ghost btn-sm btn-circle md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 hover:bg-success/10"
           @click="$emit('copyCard')"
           :disabled="loading"
           :title="`复制 ${source.name} 卡片`">
@@ -97,8 +97,9 @@
           </svg>
         </button>
 
+        <!-- 拖拽手柄 - 移动端始终显示，桌面端 hover 显示 -->
         <button
-          class="drag-handle btn btn-ghost btn-sm btn-circle cursor-grab active:cursor-grabbing opacity-0 group-hover:opacity-100 transition-all duration-200 hover:bg-base-300"
+          class="drag-handle btn btn-ghost btn-sm btn-circle cursor-grab active:cursor-grabbing md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 hover:bg-base-300"
           :title="`拖拽调整 ${source.name} 顺序`">
           <svg
             class="w-4 h-4"
@@ -120,7 +121,7 @@
     </div>
 
     <!-- 加载进度条 -->
-    <div v-if="loading" class="mt-4">
+    <div v-if="loading" class="mt-3 md:mt-4">
       <div class="w-full bg-base-300/30 rounded-full h-1 overflow-hidden">
         <div
           class="h-full bg-gradient-to-r from-primary to-secondary rounded-full animate-pulse"
