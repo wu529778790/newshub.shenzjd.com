@@ -205,6 +205,86 @@ export const sources: Source[] = [
     name: "Google Trends",
     home: "https://trends.google.com",
   },
+  {
+    id: "v2ex",
+    name: "V2EX",
+    home: "https://v2ex.com",
+  },
+  {
+    id: "v2ex-share",
+    name: "V2EX 分享",
+    home: "https://v2ex.com",
+  },
+  {
+    id: "bilibili",
+    name: "哔哩哔哩",
+    home: "https://www.bilibili.com",
+  },
+  {
+    id: "bilibili-hot-search",
+    name: "B站热搜",
+    home: "https://www.bilibili.com",
+  },
+  {
+    id: "bilibili-hot-video",
+    name: "B站热门视频",
+    home: "https://www.bilibili.com",
+  },
+  {
+    id: "bilibili-ranking",
+    name: "B站排行榜",
+    home: "https://www.bilibili.com",
+  },
+  {
+    id: "pcbeta",
+    name: "远景论坛",
+    home: "https://bbs.pcbeta.com",
+  },
+  {
+    id: "pcbeta-windows11",
+    name: "远景论坛 Win11",
+    home: "https://bbs.pcbeta.com",
+  },
+  {
+    id: "fastbull-news",
+    name: "法布财经新闻",
+    home: "https://www.fastbull.cn",
+  },
+  {
+    id: "wallstreetcn-news",
+    name: "华尔街见闻-新闻",
+    home: "https://wallstreetcn.com",
+  },
+  {
+    id: "wallstreetcn-hot",
+    name: "华尔街见闻-热门",
+    home: "https://wallstreetcn.com",
+  },
+  {
+    id: "eastmoney",
+    name: "东方财富",
+    home: "https://finance.eastmoney.com",
+  },
+  {
+    id: "hackernews",
+    name: "Hacker News",
+    home: "https://news.ycombinator.com",
+  },
+  {
+    id: "producthunt",
+    name: "Product Hunt",
+    home: "https://www.producthunt.com",
+  },
+  {
+    id: "bbcnews",
+    name: "BBC News",
+    home: "https://www.bbc.com/news",
+  },
+  {
+    id: "v2exnew",
+    name: "V2EX 热门",
+    home: "https://www.v2ex.com",
+  },
 ];
 
 export const sourcesMap = new Map(sources.map((item) => [item.id, item]));

@@ -56,6 +56,7 @@ import getXiaohongshuList from "~/server/sources/xiaohongshu";
 import getDoubanList from "~/server/sources/douban";
 import getTwitterList from "~/server/sources/twitter";
 import getGoogleTrendsList from "~/server/sources/google-trends";
+import getV2exList from "~/server/sources/v2ex";
 
 // 保持旧的 fetcherMap 用于向后兼容
 const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
@@ -113,6 +114,11 @@ const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
   "douban-music": getDoubanList["douban-music"]!,
   twitter: getTwitterList.twitter!,
   "google-trends": getGoogleTrendsList["google-trends"]!,
+
+  // 主源映射（redirect 到第一个子源）
+  bilibili: getBilibiliHotSearch,
+  pcbeta: getPcbetaHotList["pcbeta-windows11"]!,
+  v2ex: getV2exList["v2ex-share"]!,
 };
 
 /**
