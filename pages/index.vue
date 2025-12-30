@@ -179,7 +179,6 @@ const columns = computed(() => {
     { id: 'world', name: '国际', count: 0 },
     { id: 'tech', name: '科技', count: 0 },
     { id: 'finance', name: '财经', count: 0 },
-    { id: 'culture', name: '文化', count: 0 },
   ];
 
   // 计算每个分类的数量
@@ -191,7 +190,8 @@ const columns = computed(() => {
     }
   });
 
-  return cols;
+  // 过滤掉没有数据的分类
+  return cols.filter(c => c.count > 0);
 });
 
 // 判断是否显示该数据源
