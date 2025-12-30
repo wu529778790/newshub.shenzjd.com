@@ -208,13 +208,15 @@ const filteredSources = computed(() => {
 });
 
 const fetchHotListForSource = async (source, isRefresh = false, retryCount = 0) => {
-  if (loadingStates.value[source.id]) return;
+  // 如果正在加载中，除非是强制刷新，否则跳过
+  if (loadingStates.value[source.id] && !isRefresh) return;
 
   // 只有在非刷新且已有数据时才跳过
   if (!isRefresh && hotItemsBySource.value[source.id]?.length > 0) {
     return;
   }
 
+  // 设置 loading 状态
   loadingStates.value = { ...loadingStates.value, [source.id]: true };
 
   try {
@@ -324,6 +326,15 @@ const loadInitialData = async () => {
     // 应用置顶排序
     sortSourcesWithPinning(sourceList, preference.pinned || [], preference.order || []);
     sources.value = sourceList;
+
+    // 关键优化：立即为所有源设置 loading 状态，避免空白闪烁
+    // 这样卡片一显示就会看到 loading，而不是空白
+    const initialLoadingStates = {};
+    sourceList.forEach(source => {
+      initialLoadingStates[source.id] = true;
+    });
+    loadingStates.value = initialLoadingStates;
+
   } catch (err) {
     console.error("Failed to fetch sources:", err);
     error.value = "获取数据源列表失败，请检查网络连接。";

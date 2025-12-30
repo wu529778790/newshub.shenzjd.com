@@ -23,9 +23,9 @@
         @openLink="$emit('openLink', $event)" />
     </div>
 
-    <!-- 空状态 -->
+    <!-- 空状态 - 只在明确有空数组且未加载时显示 -->
     <EmptyState
-      v-else-if="!loading && items"
+      v-else-if="!loading && items && items.length === 0"
       title="暂无内容"
       subtitle="请稍后刷新重试" />
 
