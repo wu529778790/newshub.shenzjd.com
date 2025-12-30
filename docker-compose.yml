@@ -2,10 +2,10 @@ version: "3.8"
 
 services:
   newshub:
-    # 使用 GitHub Container Registry 的镜像
-    image: ghcr.io/wu529778790/newshub.shenzjd.com:latest
-    # 或者使用 Docker Hub
-    # image: wu529778790/newshub.shenzjd.com:latest
+    # 本地构建（推荐）
+    build: .
+    # 或者使用远程镜像
+    # image: ghcr.io/wu529778790/newshub.shenzjd.com:latest
     container_name: newshub
     ports:
       - "3000:3000"
@@ -20,7 +20,7 @@ services:
       # 持久化数据和缓存
       - ./data:/app/data
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/sources"]
+      test: ["CMD", "curl", "-f", "http://localhost:3000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
