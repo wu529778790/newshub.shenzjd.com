@@ -13,17 +13,6 @@ const Time = {
 };
 
 export const originSources = {
-  v2ex: {
-    name: "V2EX",
-    color: "slate",
-    home: "https://v2ex.com/",
-    sub: {
-      share: {
-        title: "最新分享",
-        column: "tech",
-      },
-    },
-  },
   zhihu: {
     name: "知乎",
     type: "hottest",
