@@ -112,6 +112,25 @@ const getSavedPreference = () => {
   }
 };
 
+// 清理无效的源 ID（已删除的数据源）
+const cleanInvalidSources = (preference, validSourceIds) => {
+  const cleaned = {
+    order: preference.order.filter(id => validSourceIds.includes(id)),
+    pinned: preference.pinned.filter(id => validSourceIds.includes(id)),
+  };
+
+  // 如果有清理，更新 localStorage
+  if (
+    cleaned.order.length !== preference.order.length ||
+    cleaned.pinned.length !== preference.pinned.length
+  ) {
+    savePreference(cleaned.order, cleaned.pinned);
+    console.log('已清理无效的数据源缓存');
+  }
+
+  return cleaned;
+};
+
 // 保存用户偏好设置
 const savePreference = (order, pinned) => {
   localStorage.setItem(
@@ -138,8 +157,10 @@ const togglePin = (sourceId) => {
   sortSourcesWithPinning(newSources, preference.pinned, preference.order);
   sources.value = newSources;
 
-  // 保存偏好
-  savePreference(preference.order, preference.pinned);
+  // 保存偏好（同时清理无效源）
+  const validSourceIds = sources.value.map(s => s.id);
+  const cleaned = cleanInvalidSources(preference, validSourceIds);
+  savePreference(cleaned.order, cleaned.pinned);
 };
 
 // 根据置顶状态排序
@@ -299,7 +320,13 @@ const loadInitialData = async () => {
   error.value = null;
   try {
     let sourceList = await $fetch("/api/sources");
-    const preference = getSavedPreference();
+
+    // 获取所有有效的源 ID
+    const validSourceIds = sourceList.map(s => s.id);
+
+    // 获取并清理保存的偏好设置
+    let preference = getSavedPreference();
+    preference = cleanInvalidSources(preference, validSourceIds);
 
     // 保存置顶状态
     pinnedSources.value = preference.pinned || [];
@@ -355,7 +382,11 @@ watch(
 
     const order = newSources.map((s) => s.id);
     const pinned = pinnedSources.value;
-    savePreference(order, pinned);
+
+    // 清理无效源并保存
+    const validSourceIds = newSources.map(s => s.id);
+    const cleaned = cleanInvalidSources({ order, pinned }, validSourceIds);
+    savePreference(cleaned.order, cleaned.pinned);
 
     if (!observerInitialized) {
       nextTick(() => {
