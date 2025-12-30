@@ -15,7 +15,7 @@
     "generate": "nuxt generate",
     "preview": "nuxt preview",
     "preview:production": "cross-env NODE_ENV=production nuxt preview",
-    "start": "node docker-start.mjs",
+    "start": "node start.mjs",
     "postinstall": "nuxt prepare",
     "test": "vitest",
     "test:watch": "vitest --watch",

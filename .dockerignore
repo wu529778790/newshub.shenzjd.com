@@ -6,7 +6,6 @@ yarn-error.log*
 
 # Nuxt.js
 .nuxt
-.output
 .vscode
 .idea
 
