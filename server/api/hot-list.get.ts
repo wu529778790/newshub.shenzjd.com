@@ -20,15 +20,27 @@ export default defineEventHandler(async (event) => {
   // 如果不是强制刷新，则检查缓存
   if (!forceRefresh && cacheTable) {
     const cache = await cacheTable.get(id);
-    if (cache && now - cache.updated < 3600000) {
-      // 1 hour
-      return cache.items;
+    if (cache) {
+      const age = now - cache.updated;
+      // 缓存时间根据数据是否为空而不同
+      // 有数据：缓存1小时
+      // 空数据：缓存1分钟（避免重复抓取）
+      const cacheDuration = cache.items?.length > 0 ? 3600000 : 60000;
+
+      if (age < cacheDuration) {
+        return cache.items;
+      }
     }
   }
 
+  // 添加随机延迟，避免同时请求多个源导致被限流
+  const randomDelay = Math.random() * 500; // 0-500ms
+  await new Promise(resolve => setTimeout(resolve, randomDelay));
+
   const items = await getHotList(id);
 
-  if (cacheTable && items.length) {
+  if (cacheTable) {
+    // 即使是空数据也缓存，但时间较短
     await cacheTable.set(id, items);
   }
 

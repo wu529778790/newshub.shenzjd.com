@@ -207,30 +207,51 @@ const filteredSources = computed(() => {
   return sources.value.filter(shouldShowSource);
 });
 
-const fetchHotListForSource = async (source, isRefresh = false) => {
+const fetchHotListForSource = async (source, isRefresh = false, retryCount = 0) => {
   if (loadingStates.value[source.id]) return;
-  if (
-    !isRefresh &&
-    hotItemsBySource.value[source.id] &&
-    hotItemsBySource.value[source.id].length > 0
-  ) {
+
+  // 只有在非刷新且已有数据时才跳过
+  if (!isRefresh && hotItemsBySource.value[source.id]?.length > 0) {
     return;
   }
 
   loadingStates.value = { ...loadingStates.value, [source.id]: true };
+
   try {
     const params = { id: source.id };
     // 如果是刷新操作，添加refresh参数强制重新获取数据
     if (isRefresh) {
       params.refresh = "true";
     }
-    const items = await $fetch("/api/hot-list", { params });
+
+    const items = await $fetch("/api/hot-list", {
+      params,
+      retry: 2,  // 增加重试次数
+      retryDelay: 1000,  // 重试延迟
+      timeout: 15000  // 增加超时时间
+    });
+
+    // 如果返回空数组且不是刷新，自动重试一次
+    if ((!items || items.length === 0) && !isRefresh && retryCount < 1) {
+      console.warn(`Empty data for ${source.id}, retrying...`);
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return fetchHotListForSource(source, true, retryCount + 1);
+    }
+
     hotItemsBySource.value = {
       ...hotItemsBySource.value,
       [source.id]: items || [],
     };
   } catch (err) {
     console.error(`Failed to fetch hot list for ${source.id}:`, err);
+
+    // 失败时自动重试（最多2次）
+    if (retryCount < 2) {
+      console.warn(`Retry ${retryCount + 1}/2 for ${source.id}`);
+      await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1)));
+      return fetchHotListForSource(source, isRefresh, retryCount + 1);
+    }
+
     hotItemsBySource.value = { ...hotItemsBySource.value, [source.id]: [] };
   } finally {
     loadingStates.value = { ...loadingStates.value, [source.id]: false };
@@ -335,11 +356,31 @@ watch(
   { deep: true }
 );
 
-onMounted(loadInitialData);
+onMounted(() => {
+  loadInitialData();
 
-onUnmounted(() => {
-  if (observer) {
-    observer.disconnect();
-  }
+  // 监听页面可见性变化，页面重新可见时检查数据
+  const handleVisibilityChange = () => {
+    if (!document.hidden && sources.value.length > 0) {
+      // 页面重新可见，检查是否有空数据的源并重新加载
+      sources.value.forEach(source => {
+        const items = hotItemsBySource.value[source.id];
+        if (!items || items.length === 0) {
+          console.log(`Page visible, reloading empty source: ${source.id}`);
+          fetchHotListForSource(source, true);
+        }
+      });
+    }
+  };
+
+  document.addEventListener('visibilitychange', handleVisibilityChange);
+
+  // 清理函数
+  onUnmounted(() => {
+    if (observer) {
+      observer.disconnect();
+    }
+    document.removeEventListener('visibilitychange', handleVisibilityChange);
+  });
 });
 </script>
