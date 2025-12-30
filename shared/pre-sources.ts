@@ -285,6 +285,52 @@ export const originSources = {
     title: "热点资讯",
     home: "https://www.ifeng.com",
   },
+
+  // 新增数据源 - 第一优先级
+  hackernews: {
+    name: "Hacker News",
+    type: "hottest",
+    column: "tech",
+    color: "orange",
+    home: "https://news.ycombinator.com",
+    interval: Time.Fast,
+  },
+
+  producthunt: {
+    name: "Product Hunt",
+    type: "hottest",
+    column: "tech",
+    color: "orange",
+    home: "https://www.producthunt.com",
+    interval: Time.Common,
+  },
+
+  eastmoney: {
+    name: "东方财富",
+    type: "realtime",
+    column: "finance",
+    color: "blue",
+    home: "https://finance.eastmoney.com",
+    interval: Time.Realtime,
+  },
+
+  bbcnews: {
+    name: "BBC News",
+    type: "hottest",
+    column: "world",
+    color: "red",
+    home: "https://www.bbc.com/news",
+    interval: Time.Common,
+  },
+
+  v2exnew: {
+    name: "V2EX 热门",
+    type: "hottest",
+    column: "tech",
+    color: "blue",
+    home: "https://www.v2ex.com",
+    interval: Time.Common,
+  },
 } as const satisfies Record<string, OriginSource>;
 
 export function genSources() {

@@ -102,7 +102,8 @@ export class SourceManager {
     }
 
     const health = sourceRegistry.getHealth(id);
-    return health.status === 'healthy' || health.status === 'degraded';
+    // 新数据源（unknown状态）也视为可用，允许首次调用
+    return health.status === 'healthy' || health.status === 'degraded' || health.status === 'unknown';
   }
 
   /**

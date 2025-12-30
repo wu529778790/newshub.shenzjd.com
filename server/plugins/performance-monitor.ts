@@ -46,13 +46,13 @@ export default defineNitroPlugin((nitroApp) => {
 
   // 错误监控
   nitroApp.hooks.hook('error', (error, event) => {
-    const path = event?.node.req.url || '';
+    const path = event?.node?.req?.url || '';
 
     if (path.startsWith('/api/')) {
       console.error(`[API Error] ${path}:`, error);
 
       // 记录错误指标
-      if (event?.context.metrics) {
+      if (event?.context?.metrics) {
         metrics.recordRequestEnd(event.context.metrics, error);
       }
     }

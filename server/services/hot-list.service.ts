@@ -44,6 +44,13 @@ import getCoolapkHotList from "~/server/sources/coolapk";
 import type { NewsItem } from "@shared/types";
 import { migrateFromOldService } from "./source-initializer";
 
+// 新增数据源导入
+import getHackerNewsList from "~/server/sources/hackernews";
+import getProductHuntList from "~/server/sources/producthunt";
+import getEastmoneyList from "~/server/sources/eastmoney";
+import getBBCNewsList from "~/server/sources/bbcnews";
+import getV2exnewList from "~/server/sources/v2exnew";
+
 // 保持旧的 fetcherMap 用于向后兼容
 const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
   weibo: getWeiboHotList.weibo!,
@@ -85,6 +92,13 @@ const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
   xueqiu: getXueqiuHotList.xueqiu!,
 
   coolapk: getCoolapkHotList.coolapk!,
+
+  // 新增数据源
+  hackernews: getHackerNewsList,
+  producthunt: getProductHuntList,
+  eastmoney: getEastmoneyList,
+  bbcnews: getBBCNewsList,
+  v2exnew: getV2exnewList,
 };
 
 /**
