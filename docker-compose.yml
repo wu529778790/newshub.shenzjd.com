@@ -2,18 +2,34 @@ version: "3.8"
 
 services:
   newshub:
-    image: newshub.shenzjd.com/newshub.shenzjd.com:latest
+    # 使用 GitHub Container Registry 的镜像
+    image: ghcr.io/wu529778790/newshub.shenzjd.com:latest
+    # 或者使用 Docker Hub
+    # image: wu529778790/newshub.shenzjd.com:latest
+    container_name: newshub
     ports:
       - "3000:3000"
     restart: unless-stopped
     environment:
       - NODE_ENV=production
+      - PORT=3000
+      # 如果需要，取消注释并设置这些环境变量
+      # - SITE_URL=https://your-domain.com
+      # - API_SECRET=your-secret-key
+    volumes:
+      # 持久化数据和缓存
+      - ./data:/app/data
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000/api/sources"]
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/sources"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 40s
+      start_period: 60s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
     networks:
       - newshub-network
 
