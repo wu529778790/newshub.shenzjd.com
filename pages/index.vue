@@ -24,14 +24,17 @@
         handle=".drag-handle"
         animation="300"
         ghost-class="opacity-50"
-        chosen-class="ring-2 ring-primary ring-offset-2 ring-offset-base-100">
+        chosen-class="ring-2 ring-primary ring-offset-2 ring-offset-base-100"
+        :disabled="isPinnedMode">
         <template #item="{ element: source }">
           <HotListCard
             :source="source"
             :items="hotItemsBySource[source.id] || []"
             :loading="loadingStates[source.id]"
+            :is-pinned="pinnedSources.includes(source.id)"
             @refresh="refreshSource"
             @open-link="openLink"
+            @toggle-pin="togglePin"
             @set-element-ref="(el) => (sourceElements[source.id] = el)" />
         </template>
       </draggable>
@@ -49,8 +52,78 @@ const loadingStates = ref({});
 const initialLoading = ref(false);
 const error = ref(null);
 const sourceElements = ref({});
+const pinnedSources = ref([]);
+const isPinnedMode = ref(false);
 
-const SOURCE_ORDER_KEY = "hot-list-source-order";
+const SOURCE_PREFERENCE_KEY = "hot-list-preference";
+
+// 获取保存的用户偏好设置
+const getSavedPreference = () => {
+  const saved = localStorage.getItem(SOURCE_PREFERENCE_KEY);
+  if (!saved) return { order: [], pinned: [] };
+  try {
+    const parsed = JSON.parse(saved);
+    return {
+      order: parsed.order || [],
+      pinned: parsed.pinned || [],
+    };
+  } catch {
+    return { order: [], pinned: [] };
+  }
+};
+
+// 保存用户偏好设置
+const savePreference = (order, pinned) => {
+  localStorage.setItem(
+    SOURCE_PREFERENCE_KEY,
+    JSON.stringify({ order, pinned })
+  );
+};
+
+// 切换置顶状态
+const togglePin = (sourceId) => {
+  const preference = getSavedPreference();
+  const isPinned = preference.pinned.includes(sourceId);
+
+  if (isPinned) {
+    preference.pinned = preference.pinned.filter((id) => id !== sourceId);
+  } else {
+    preference.pinned.push(sourceId);
+  }
+
+  pinnedSources.value = preference.pinned;
+
+  // 重新排序 sources
+  const newSources = [...sources.value];
+  sortSourcesWithPinning(newSources, preference.pinned, preference.order);
+  sources.value = newSources;
+
+  // 保存偏好
+  savePreference(preference.order, preference.pinned);
+};
+
+// 根据置顶状态排序
+const sortSourcesWithPinning = (sourceList, pinned, order) => {
+  sourceList.sort((a, b) => {
+    const aPinned = pinned.includes(a.id);
+    const bPinned = pinned.includes(b.id);
+
+    // 置顶的在前面
+    if (aPinned && !bPinned) return -1;
+    if (!aPinned && bPinned) return 1;
+
+    // 都置顶或都不置顶，按 order 排序
+    const aIndex = order.indexOf(a.id);
+    const bIndex = order.indexOf(b.id);
+
+    // 如果不在 order 中，放到后面
+    if (aIndex === -1 && bIndex === -1) return 0;
+    if (aIndex === -1) return 1;
+    if (bIndex === -1) return -1;
+
+    return aIndex - bIndex;
+  });
+};
 
 // 打开链接
 const openLink = (url) => {
@@ -128,12 +201,16 @@ const loadInitialData = async () => {
   error.value = null;
   try {
     let sourceList = await $fetch("/api/sources");
-    const savedOrder = JSON.parse(localStorage.getItem(SOURCE_ORDER_KEY));
+    const preference = getSavedPreference();
 
-    if (savedOrder && Array.isArray(savedOrder)) {
+    // 保存置顶状态
+    pinnedSources.value = preference.pinned || [];
+
+    // 应用排序和置顶
+    if (preference.order && Array.isArray(preference.order)) {
       const sourceMap = new Map(sourceList.map((s) => [s.id, s]));
       const orderedList = [];
-      savedOrder.forEach((id) => {
+      preference.order.forEach((id) => {
         if (sourceMap.has(id)) {
           orderedList.push(sourceMap.get(id));
           sourceMap.delete(id);
@@ -143,6 +220,8 @@ const loadInitialData = async () => {
       sourceList = orderedList;
     }
 
+    // 应用置顶排序
+    sortSourcesWithPinning(sourceList, preference.pinned || [], preference.order || []);
     sources.value = sourceList;
   } catch (err) {
     console.error("Failed to fetch sources:", err);
@@ -163,7 +242,8 @@ watch(
     if (!newSources || newSources.length === 0) return;
 
     const order = newSources.map((s) => s.id);
-    localStorage.setItem(SOURCE_ORDER_KEY, JSON.stringify(order));
+    const pinned = pinnedSources.value;
+    savePreference(order, pinned);
 
     if (!observerInitialized) {
       nextTick(() => {
