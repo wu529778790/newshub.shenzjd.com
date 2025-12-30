@@ -22,6 +22,7 @@ docker-compose.yml
 test
 *.test.js
 *.test.ts
+vitest.config.ts
 
 # Documentation
 README.md
@@ -49,10 +50,6 @@ pids
 # Coverage directory used by tools like istanbul
 coverage
 
-# Dependency directories
-node_modules/
-jspm_packages/
-
 # Optional npm cache directory
 .npm
 
@@ -64,3 +61,12 @@ jspm_packages/
 
 # Yarn Integrity file
 .yarn-integrity
+
+# GitHub
+.github
+
+# Development configs
+.eslintrc.*
+.prettierrc.*
+.vscode
+.idea
