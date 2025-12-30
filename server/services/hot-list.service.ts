@@ -51,6 +51,12 @@ import getEastmoneyList from "~/server/sources/eastmoney";
 import getBBCNewsList from "~/server/sources/bbcnews";
 import getV2exnewList from "~/server/sources/v2exnew";
 
+// 高优先级新增数据源
+import getXiaohongshuList from "~/server/sources/xiaohongshu";
+import getDoubanList from "~/server/sources/douban";
+import getTwitterList from "~/server/sources/twitter";
+import getGoogleTrendsList from "~/server/sources/google-trends";
+
 // 保持旧的 fetcherMap 用于向后兼容
 const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
   weibo: getWeiboHotList.weibo!,
@@ -99,6 +105,14 @@ const fetcherMap: Record<string, () => Promise<NewsItem[]>> = {
   eastmoney: getEastmoneyList,
   bbcnews: getBBCNewsList,
   v2exnew: getV2exnewList,
+
+  // 高优先级新增数据源
+  xiaohongshu: getXiaohongshuList.xiaohongshu!,
+  "douban-movie": getDoubanList["douban-movie"]!,
+  "douban-book": getDoubanList["douban-book"]!,
+  "douban-music": getDoubanList["douban-music"]!,
+  twitter: getTwitterList.twitter!,
+  "google-trends": getGoogleTrendsList["google-trends"]!,
 };
 
 /**

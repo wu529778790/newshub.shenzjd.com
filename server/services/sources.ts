@@ -173,6 +173,38 @@ export const sources: Source[] = [
     name: "酷安",
     home: "https://www.coolapk.com",
   },
+
+  // 高优先级新增数据源
+  {
+    id: "xiaohongshu",
+    name: "小红书",
+    home: "https://www.xiaohongshu.com",
+  },
+  {
+    id: "douban-movie",
+    name: "豆瓣电影",
+    home: "https://movie.douban.com",
+  },
+  {
+    id: "douban-book",
+    name: "豆瓣图书",
+    home: "https://book.douban.com",
+  },
+  {
+    id: "douban-music",
+    name: "豆瓣音乐",
+    home: "https://music.douban.com",
+  },
+  {
+    id: "twitter",
+    name: "Twitter",
+    home: "https://twitter.com",
+  },
+  {
+    id: "google-trends",
+    name: "Google Trends",
+    home: "https://trends.google.com",
+  },
 ];
 
 export const sourcesMap = new Map(sources.map((item) => [item.id, item]));
