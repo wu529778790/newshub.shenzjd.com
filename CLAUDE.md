@@ -221,23 +221,63 @@ export default defineNuxtConfig({
 | 快手 | 热点 | - | 10 分钟 |
 | V2EX | 分享 | 最新 | 30 分钟 |
 
-## Docker 部署
+## 🐳 Docker 部署
 
-### Dockerfile（多阶段构建）
+### Dockerfile（多阶段构建 + 权限修复）
 
 ```dockerfile
-FROM node:20-alpine AS builder
+FROM node:20-alpine AS base
 WORKDIR /app
+RUN npm install -g pnpm
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 COPY . .
 RUN pnpm build
 
-FROM node:20-alpine AS runtime
+FROM node:20-alpine AS production
 WORKDIR /app
-COPY --from=builder /app/.output ./.output
+RUN npm install -g pnpm
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+COPY --from=base /app/.output ./.output
+
+# 创建非 root 用户并设置权限
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nuxt && \
+    mkdir -p /app/data/cache && \
+    chown -R nuxt:nodejs /app/data /app/.output
+
+USER nuxt
 EXPOSE 3000
 CMD ["node", ".output/server/index.mjs"]
+```
+
+### Vercel 部署配置
+
+**vercel.json:**
+```json
+{
+  "buildCommand": "pnpm build",
+  "outputDirectory": ".output",
+  "devCommand": "pnpm dev",
+  "installCommand": "pnpm install",
+  "framework": "nuxtjs"
+}
+```
+
+**nuxt.config.ts 关键配置:**
+```typescript
+nitro: {
+  // 自动检测 Vercel 环境
+  preset: process.env.VERCEL ? "vercel" : (process.env.NITRO_PRESET || "node"),
+
+  // Vercel 禁用文件缓存（使用内存）
+  storage: {
+    ...(process.env.VERCEL ? {} : {
+      fs: { driver: "fs", base: "./data/cache" }
+    })
+  }
+}
 ```
 
 ### GitHub Actions（自动发布）
@@ -265,20 +305,13 @@ jobs:
 ### 部署命令
 
 ```bash
-# 1. 打标签并推送
-git tag v1.0.0
-git push origin v1.0.0
+# Docker 部署
+docker run -p 3000:3000 wu529778790/newshub.shenzjd.com:latest
 
-# 2. GitHub Actions 自动构建 Docker 镜像
-
-# 3. 服务器拉取并运行
-docker pull ghcr.io/your/repo:v1.0.0
-docker run -d \
-  -p 3000:3000 \
-  -e SITE_URL=https://your-site.com \
-  -v /path/to/data:/app/data \
-  --name newshub \
-  ghcr.io/your/repo:v1.0.0
+# Vercel 部署
+# 1. 连接 GitHub 仓库
+# 2. 自动检测并部署
+# 3. 框架选择 Nuxt.js
 ```
 
 ## 核心特性
