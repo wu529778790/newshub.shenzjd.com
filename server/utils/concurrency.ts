@@ -35,8 +35,9 @@ export class TaskQueue {
         }
       });
 
-      if (this.active < this.maxConcurrent && !this.paused) {
-        this.processNext();
+      // 立即尝试处理下一个任务
+      if (!this.paused) {
+        setTimeout(() => this.processNext(), 0);
       }
     });
   }
@@ -158,9 +159,11 @@ export class RateLimiter {
   /**
    * 包装函数，自动应用速率限制
    */
-  async wrap<T>(fn: () => Promise<T>): Promise<T> {
-    await this.acquire();
-    return fn();
+  wrap<T, Args extends any[] = []>(fn: (...args: Args) => Promise<T>): (...args: Args) => Promise<T> {
+    return async (...args: Args): Promise<T> => {
+      await this.acquire();
+      return fn(...args);
+    };
   }
 
   /**
@@ -548,7 +551,10 @@ export class PriorityTaskQueue {
         this.queue.splice(index, 0, item);
       }
 
-      this.processNext();
+      // 延迟到下一个事件循环处理，确保任务已添加
+      if (this.active < this.maxConcurrent) {
+        setTimeout(() => this.processNext(), 0);
+      }
     });
   }
 
@@ -565,8 +571,8 @@ export class PriorityTaskQueue {
 
     this.active++;
 
-    // 异步执行
-    setImmediate(async () => {
+    // 立即执行
+    (async () => {
       try {
         const result = await item.execute();
         item.resolve(result);
@@ -574,9 +580,12 @@ export class PriorityTaskQueue {
         item.reject(error);
       } finally {
         this.active--;
-        this.processNext();
+        // 继续处理下一个
+        if (this.queue.length > 0) {
+          setTimeout(() => this.processNext(), 0);
+        }
       }
-    });
+    })();
   }
 
   /**

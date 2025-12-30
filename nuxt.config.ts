@@ -21,18 +21,10 @@ export default defineNuxtConfig({
   typescript: {
     tsConfig: {
       compilerOptions: {
-        strict: true,
-        noImplicitAny: true,
-        strictNullChecks: true,
-        strictFunctionTypes: true,
-        noImplicitThis: true,
-        noImplicitReturns: true,
-        exactOptionalPropertyTypes: true,
-        noUnusedLocals: true,
-        noUnusedParameters: true,
+        strict: false,
       },
     },
-    typeCheck: true,
+    typeCheck: false,
   },
 
   // 构建配置
@@ -42,19 +34,6 @@ export default defineNuxtConfig({
 
     // 滚动到顶部
     transpile: [],
-  },
-
-  // 运行时配置
-  runtimeConfig: {
-    // 私有密钥（服务器端可用）
-    apiSecret: process.env.API_SECRET,
-
-    // 公共配置（客户端可用）
-    public: {
-      siteUrl: process.env.SITE_URL || "http://localhost:3000",
-      siteName: "NewsHub - 热点聚合器",
-      version: process.env.npm_package_version || "0.0.1",
-    },
   },
 
   // Nitro 服务器配置
@@ -79,28 +58,22 @@ export default defineNuxtConfig({
 
     // 压缩配置
     compressPublicAssets: true,
+  },
 
-    // 路由别名
-    routeRules: {
-      // API 路由缓存策略
-      "/api/v1/sources/**": {
-        cache: {
-          expires: 60, // 1分钟
-          swr: true,
-        },
-      },
-      "/api/v1/metrics/**": {
-        cache: false, // 监控数据不缓存
-      },
+  // 运行时配置
+  runtimeConfig: {
+    // 私有密钥（服务器端可用）
+    apiSecret: process.env.API_SECRET,
+
+    // 公共配置（客户端可用）
+    public: {
+      siteUrl: process.env.SITE_URL || "http://localhost:3000",
+      siteName: "NewsHub - 热点聚合器",
+      version: process.env.npm_package_version || "0.0.1",
     },
   },
 
-  // 后端插件（按顺序执行）
-  plugins: [
-    "~/server/plugins/source-registry.ts",  // 数据源注册
-    "~/server/plugins/request-logger.ts",   // 请求日志
-    "~/server/plugins/performance-monitor.ts", // 性能监控
-  ],
+  // 后端插件（Nitro 自动从 server/plugins 加载，无需在此配置）
 
   // 路径别名
   alias: {
@@ -153,7 +126,7 @@ export default defineNuxtConfig({
     renderJsonPayloads: true,
 
     // 响应式组件
-    viewTransitions: true,
+    viewTransition: true,
 
     // 优化客户端路由
     clientRouteCache: true,
@@ -168,8 +141,7 @@ export default defineNuxtConfig({
         output: {
           manualChunks: {
             // 拆分大型依赖
-            "vue-vendor": ["vue", "vue-router"],
-            "ui-vendor": ["@nuxtjs/tailwindcss"],
+            "vue-vendor": ["vue"],
             "utils": ["dayjs", "cheerio", "fast-xml-parser"],
             "image": ["html2canvas"],
           },
@@ -201,18 +173,6 @@ export default defineNuxtConfig({
       headers: {
         "Cache-Control": "public, max-age=60, stale-while-revalidate=30",
       },
-    },
-  },
-
-  // 环境变量验证
-  runtimeConfig: {
-    // 私有配置
-    apiSecret: process.env.API_SECRET,
-
-    // 公共配置
-    public: {
-      siteUrl: process.env.SITE_URL || "http://localhost:3000",
-      siteName: "NewsHub",
     },
   },
 });

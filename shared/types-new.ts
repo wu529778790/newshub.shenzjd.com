@@ -52,7 +52,7 @@ export const NewsItemSchema = z.object({
     rank: z.number().optional().describe('排名'),
     score: z.number().optional().describe('分数/热度'),
     heat: z.string().optional().describe('热度文本'),
-  ]).optional().describe('扩展信息'),
+  }).optional().describe('扩展信息'),
 
   // 元数据
   sourceId: z.string().optional().describe('数据源ID'),
