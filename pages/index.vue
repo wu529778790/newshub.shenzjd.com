@@ -16,6 +16,35 @@
 
     <!-- 主内容区域 -->
     <main v-else class="container mx-auto px-6 py-8">
+      <!-- 分类筛选栏 -->
+      <div class="mb-6 flex flex-wrap items-center gap-2">
+        <button
+          v-for="col in columns"
+          :key="col.id"
+          @click="activeColumn = col.id"
+          class="btn btn-sm"
+          :class="[
+            activeColumn === col.id
+              ? 'btn-primary'
+              : 'btn-ghost border border-base-300'
+          ]">
+          {{ col.name }}
+          <span class="ml-1 opacity-70 text-xs">({{ col.count }})</span>
+        </button>
+        <button
+          @click="activeColumn = 'all'"
+          class="btn btn-sm"
+          :class="[
+            activeColumn === 'all'
+              ? 'btn-primary'
+              : 'btn-ghost border border-base-300'
+          ]">
+          全部
+          <span class="ml-1 opacity-70 text-xs">({{ sources.length }})</span>
+        </button>
+      </div>
+
+      <!-- 数据源列表 -->
       <draggable
         v-model="sources"
         item-key="id"
@@ -28,6 +57,7 @@
         :disabled="isPinnedMode">
         <template #item="{ element: source }">
           <HotListCard
+            v-if="shouldShowSource(source)"
             :source="source"
             :items="hotItemsBySource[source.id] || []"
             :loading="loadingStates[source.id]"
@@ -38,6 +68,12 @@
             @set-element-ref="(el) => (sourceElements[source.id] = el)" />
         </template>
       </draggable>
+
+      <!-- 空状态 -->
+      <div v-if="filteredSources.length === 0" class="text-center py-12">
+        <div class="text-6xl mb-4">🔍</div>
+        <p class="text-lg text-base-content/60">该分类下暂无数据源</p>
+      </div>
     </main>
   </div>
 </template>
@@ -54,6 +90,8 @@ const error = ref(null);
 const sourceElements = ref({});
 const pinnedSources = ref([]);
 const isPinnedMode = ref(false);
+const activeColumn = ref("all");
+const allSourcesData = ref({});
 
 const SOURCE_PREFERENCE_KEY = "hot-list-preference";
 
@@ -132,6 +170,41 @@ const openLink = (url) => {
   }
 };
 
+// 分类计算
+const columns = computed(() => {
+  const cols = [
+    { id: 'china', name: '国内', count: 0 },
+    { id: 'world', name: '国际', count: 0 },
+    { id: 'tech', name: '科技', count: 0 },
+    { id: 'finance', name: '财经', count: 0 },
+    { id: 'culture', name: '文化', count: 0 },
+  ];
+
+  // 计算每个分类的数量
+  sources.value.forEach(source => {
+    const sourceData = allSourcesData.value[source.id];
+    if (sourceData && sourceData.column) {
+      const col = cols.find(c => c.id === sourceData.column);
+      if (col) col.count++;
+    }
+  });
+
+  return cols;
+});
+
+// 判断是否显示该数据源
+const shouldShowSource = (source) => {
+  if (activeColumn.value === 'all') return true;
+
+  const sourceData = allSourcesData.value[source.id];
+  return sourceData && sourceData.column === activeColumn.value;
+};
+
+// 计算当前筛选后的源列表（用于空状态判断）
+const filteredSources = computed(() => {
+  return sources.value.filter(shouldShowSource);
+});
+
 const fetchHotListForSource = async (source, isRefresh = false) => {
   if (loadingStates.value[source.id]) return;
   if (
@@ -205,6 +278,11 @@ const loadInitialData = async () => {
 
     // 保存置顶状态
     pinnedSources.value = preference.pinned || [];
+
+    // 保存完整的源数据（用于分类）
+    sourceList.forEach(source => {
+      allSourcesData.value[source.id] = source;
+    });
 
     // 应用排序和置顶
     if (preference.order && Array.isArray(preference.order)) {
