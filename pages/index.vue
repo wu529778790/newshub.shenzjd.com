@@ -71,8 +71,8 @@
         </template>
       </draggable>
 
-      <!-- 空状态 -->
-      <div v-if="filteredSources.length === 0" class="text-center py-12">
+      <!-- 空状态 - 只在所有数据源都为空时显示 -->
+      <div v-if="sources.length > 0 && filteredSources.length === 0" class="text-center py-12">
         <div class="text-6xl mb-4">🔍</div>
         <p class="text-lg text-base-content/60">该分类下暂无数据源</p>
       </div>
