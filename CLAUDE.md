@@ -223,39 +223,97 @@ export default defineNuxtConfig({
 
 ## 🐳 Docker 部署
 
-### Dockerfile（多阶段构建 + 权限修复）
+### Dockerfile（单阶段构建）
 
 ```dockerfile
-FROM node:20-alpine AS base
+FROM node:20-alpine
+
 WORKDIR /app
+
+# 安装 pnpm
 RUN npm install -g pnpm
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
+
+# 复制所有文件
 COPY . .
-RUN pnpm build
 
-FROM node:20-alpine AS production
-WORKDIR /app
-RUN npm install -g pnpm
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile --prod
-COPY --from=base /app/.output ./.output
+# 安装依赖并构建
+RUN pnpm install --frozen-lockfile && pnpm build
 
-# 创建非 root 用户并设置权限
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 nuxt && \
-    mkdir -p /app/data/cache && \
-    chown -R nuxt:nodejs /app/data /app/.output
-
-USER nuxt
+# 暴露端口
 EXPOSE 3000
-CMD ["node", ".output/server/index.mjs"]
+
+# 启动应用（使用增强的 start.mjs）
+CMD ["node", "start.mjs"]
 ```
 
-### Vercel 部署配置
+**关键点：**
+- 使用 `start.mjs` 作为启动脚本，支持静态文件服务
+- 单阶段构建，简化构建过程
+- 支持 GitHub Actions 自动构建
 
-**vercel.json:**
+### GitHub Actions（自动发布）
+
+```yaml
+name: Publish Docker Images
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64
+
+      # 登录 Docker Hub 和 GHCR
+      - uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # 构建并推送（同时到 Docker Hub 和 GHCR）
+      - uses: docker/build-push-action@v5
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          tags: |
+            wu529778790/newshub.shenzjd.com:latest
+            ghcr.io/wu529778790/newshub.shenzjd.com:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+```
+
+### 部署命令
+
+```bash
+# Docker Hub
+docker run -p 3000:3000 wu529778790/newshub.shenzjd.com:latest
+
+# GHCR
+docker run -p 3000:3000 ghcr.io/wu529778790/newshub.shenzjd.com:latest
+
+# Docker Compose
+docker-compose up -d
+```
+
+### Vercel 部署
+
 ```json
+// vercel.json
 {
   "buildCommand": "pnpm build",
   "outputDirectory": ".output",
@@ -263,55 +321,6 @@ CMD ["node", ".output/server/index.mjs"]
   "installCommand": "pnpm install",
   "framework": "nuxtjs"
 }
-```
-
-**nuxt.config.ts 关键配置:**
-```typescript
-nitro: {
-  // 自动检测 Vercel 环境
-  preset: process.env.VERCEL ? "vercel" : (process.env.NITRO_PRESET || "node"),
-
-  // Vercel 禁用文件缓存（使用内存）
-  storage: {
-    ...(process.env.VERCEL ? {} : {
-      fs: { driver: "fs", base: "./data/cache" }
-    })
-  }
-}
-```
-
-### GitHub Actions（自动发布）
-
-```yaml
-name: Docker Publish
-on:
-  push:
-    tags: ['v*.*.*']
-
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          platforms: linux/amd64,linux/arm64
-          tags: |
-            ghcr.io/${{ github.repository }}:${{ github.ref_name }}
-            ${{ secrets.DOCKER_HUB_USERNAME }}/${{ github.event.repository.name }}:${{ github.ref_name }}
-```
-
-### 部署命令
-
-```bash
-# Docker 部署
-docker run -p 3000:3000 wu529778790/newshub.shenzjd.com:latest
-
-# Vercel 部署
-# 1. 连接 GitHub 仓库
-# 2. 自动检测并部署
-# 3. 框架选择 Nuxt.js
 ```
 
 ## 核心特性
