@@ -1,37 +1,44 @@
-// Docker startup script for Nitro application
-// This script creates an HTTP server using the Nitro handler
+#!/usr/bin/env node
+/**
+ * Docker 启动脚本
+ * 用于启动 Nitro 构建的服务器
+ */
 
-import { createServer } from 'node:http';
+import http from 'node:http';
 import { handler } from './.output/server/index.mjs';
 
 const PORT = process.env.PORT || 3000;
+const HOST = process.env.HOST || '0.0.0.0';
 
-const server = createServer(handler);
+// 创建 HTTP 服务器
+const server = http.createServer(handler);
 
-server.listen(PORT, () => {
-  console.log(`✅ Server listening on port ${PORT}`);
-  console.log(`🚀 Ready for traffic!`);
+// 启动服务器
+server.listen(PORT, HOST, () => {
+  console.log(`🚀 NewsHub 服务器已启动`);
+  console.log(`   访问地址: http://${HOST === '0.0.0.0' ? 'localhost' : HOST}:${PORT}`);
+  console.log(`   环境变量: NODE_ENV=${process.env.NODE_ENV || 'undefined'}`);
 });
 
-// Graceful shutdown
+// 错误处理
+server.on('error', (error) => {
+  console.error('❌ 服务器启动失败:', error);
+  process.exit(1);
+});
+
+// 优雅关闭
 process.on('SIGTERM', () => {
-  console.log('SIGTERM received, shutting down gracefully...');
+  console.log('SIGTERM 信号收到，正在关闭服务器...');
   server.close(() => {
-    console.log('Server closed');
+    console.log('服务器已关闭');
     process.exit(0);
   });
 });
 
 process.on('SIGINT', () => {
-  console.log('SIGINT received, shutting down gracefully...');
+  console.log('\nSIGINT 信号收到，正在关闭服务器...');
   server.close(() => {
-    console.log('Server closed');
+    console.log('服务器已关闭');
     process.exit(0);
   });
-});
-
-// Error handling
-server.on('error', (error) => {
-  console.error('Server error:', error);
-  process.exit(1);
 });
