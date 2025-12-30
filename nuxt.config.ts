@@ -53,8 +53,8 @@ export default defineNuxtConfig({
       },
     },
 
-    // 预设（自动检测）
-    preset: process.env.NITRO_PRESET || "node",
+    // 预设（自动检测，Vercel 环境使用 vercel 预设）
+    preset: process.env.VERCEL ? "vercel" : (process.env.NITRO_PRESET || "node"),
 
     // 压缩配置
     compressPublicAssets: true,
