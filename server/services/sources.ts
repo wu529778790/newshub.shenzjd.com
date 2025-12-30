@@ -174,47 +174,6 @@ export const sources: Source[] = [
     home: "https://www.coolapk.com",
   },
 
-  // 高优先级新增数据源
-  {
-    id: "xiaohongshu",
-    name: "小红书",
-    home: "https://www.xiaohongshu.com",
-  },
-  {
-    id: "douban-movie",
-    name: "豆瓣电影",
-    home: "https://movie.douban.com",
-  },
-  {
-    id: "douban-book",
-    name: "豆瓣图书",
-    home: "https://book.douban.com",
-  },
-  {
-    id: "douban-music",
-    name: "豆瓣音乐",
-    home: "https://music.douban.com",
-  },
-  {
-    id: "twitter",
-    name: "Twitter",
-    home: "https://twitter.com",
-  },
-  {
-    id: "google-trends",
-    name: "Google Trends",
-    home: "https://trends.google.com",
-  },
-  {
-    id: "v2ex",
-    name: "V2EX",
-    home: "https://v2ex.com",
-  },
-  {
-    id: "v2ex-share",
-    name: "V2EX 分享",
-    home: "https://v2ex.com",
-  },
   {
     id: "bilibili",
     name: "哔哩哔哩",
@@ -261,19 +220,9 @@ export const sources: Source[] = [
     home: "https://wallstreetcn.com",
   },
   {
-    id: "eastmoney",
-    name: "东方财富",
-    home: "https://finance.eastmoney.com",
-  },
-  {
     id: "hackernews",
     name: "Hacker News",
     home: "https://news.ycombinator.com",
-  },
-  {
-    id: "producthunt",
-    name: "Product Hunt",
-    home: "https://www.producthunt.com",
   },
   {
     id: "bbcnews",
