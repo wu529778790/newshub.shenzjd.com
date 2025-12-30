@@ -8,15 +8,13 @@
       isPinned
         ? 'border-primary ring-2 ring-primary/20 bg-gradient-to-br from-primary/5 via-white/50 to-white/50 dark:from-primary/10 dark:via-base-200/50 dark:to-base-200/50'
         : 'border-base-300/50'
-    ]"
-    :id="source.id">
+    ]">
     <!-- 卡片头部 -->
     <CardHeader
       :source="source"
       :loading="loading"
       :is-pinned="isPinned"
       @refresh="$emit('refresh', $event)"
-      @copyCard="handleCopyCard"
       @togglePin="$emit('togglePin', $event)" />
 
     <!-- 内容区域 -->
@@ -29,7 +27,6 @@
 </template>
 
 <script setup>
-import { useImageGenerator } from '~/composables/useCardUtils';
 import CardHeader from './CardHeader.vue';
 import CardStates from './CardStates.vue';
 
@@ -53,104 +50,4 @@ const props = defineProps({
 });
 
 const emit = defineEmits(['refresh', 'openLink', 'setElementRef', 'togglePin']);
-
-const { createCustomCardImage, createSimpleTextImage, copyCanvasToClipboard } = useImageGenerator();
-
-/**
- * 显示通知（兼容原生和自定义）
- */
-const showNotification = (message, type = 'info') => {
-  if (window.$toast) {
-    const method = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
-    window.$toast[method](message);
-    return;
-  }
-
-  // 降级方案：创建自定义通知
-  const notification = document.createElement('div');
-  notification.textContent = message;
-
-  const colors = {
-    success: '#10b981',
-    info: '#3b82f6',
-    error: '#ef4444',
-  };
-
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    background: ${colors[type]};
-    color: white;
-    padding: 12px 16px;
-    border-radius: 8px;
-    font-size: 14px;
-    z-index: 9999;
-    animation: fadeInOut 3s ease-in-out;
-    max-width: 300px;
-    word-wrap: break-word;
-  `;
-
-  document.body.appendChild(notification);
-  setTimeout(() => {
-    document.body.removeChild(notification);
-  }, 3000);
-};
-
-/**
- * 复制卡片为图片（使用三级降级策略）
- */
-const handleCopyCard = async () => {
-  try {
-    const cardElement = document.getElementById(props.source.id);
-
-    if (!cardElement) {
-      throw new Error('未找到卡片元素');
-    }
-
-    // 尝试创建自定义 Canvas（推荐方案，避免跨域问题）
-    try {
-      const canvas = await createCustomCardImage(
-        props.source,
-        props.items,
-        cardElement
-      );
-      await copyCanvasToClipboard(canvas, props.source.name);
-      showNotification(`${props.source.name} 卡片已复制到剪贴板`, 'success');
-      return;
-    } catch (customError) {
-      console.warn('自定义Canvas方案失败，尝试降级:', customError);
-    }
-
-    // 降级方案：创建简单文本图片
-    const canvas = createSimpleTextImage(props.source, props.items);
-    await copyCanvasToClipboard(canvas, props.source.name);
-    showNotification(`${props.source.name} 卡片已复制到剪贴板`, 'success');
-  } catch (error) {
-    console.error('生成卡片图片失败:', error);
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    showNotification(`生成图片失败: ${errorMessage}`, 'error');
-  }
-};
 </script>
-
-<style scoped>
-@keyframes fadeInOut {
-  0% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-  10% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  90% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-  100% {
-    opacity: 0;
-    transform: translateY(-20px);
-  }
-}
-</style>

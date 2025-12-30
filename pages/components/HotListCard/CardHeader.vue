@@ -29,9 +29,9 @@
       </div>
 
       <div class="flex items-center space-x-1 flex-shrink-0">
-        <!-- 置顶按钮 - 移动端始终显示，桌面端 hover 显示 -->
+        <!-- 置顶按钮 -->
         <button
-          class="btn btn-ghost btn-sm btn-circle md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 hover:bg-warning/10"
+          class="btn btn-ghost btn-sm btn-circle hover:bg-warning/10"
           @click="$emit('togglePin', source.id)"
           :title="isPinned ? `取消置顶 ${source.name}` : `置顶 ${source.name}`">
           <svg
@@ -55,9 +55,9 @@
           </svg>
         </button>
 
-        <!-- 刷新按钮 - 移动端始终显示，桌面端 hover 显示 -->
+        <!-- 刷新按钮 -->
         <button
-          class="btn btn-ghost btn-sm btn-circle md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 hover:bg-primary/10"
+          class="btn btn-ghost btn-sm btn-circle hover:bg-primary/10"
           @click="$emit('refresh', source)"
           :disabled="loading"
           :title="`刷新 ${source.name}`">
@@ -76,46 +76,6 @@
           <div
             v-else
             class="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
-        </button>
-
-        <!-- 复制卡片按钮 - 移动端始终显示，桌面端 hover 显示 -->
-        <button
-          class="btn btn-ghost btn-sm btn-circle md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 hover:bg-success/10"
-          @click="$emit('copyCard')"
-          :disabled="loading"
-          :title="`复制 ${source.name} 卡片`">
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 002-2H6a2 2 0 002 2v12a2 2 0 002 2z" />
-          </svg>
-        </button>
-
-        <!-- 拖拽手柄 - 移动端始终显示，桌面端 hover 显示 -->
-        <button
-          class="drag-handle btn btn-ghost btn-sm btn-circle cursor-grab active:cursor-grabbing md:opacity-0 md:group-hover:opacity-100 transition-all duration-200 hover:bg-base-300"
-          :title="`拖拽调整 ${source.name} 顺序`">
-          <svg
-            class="w-4 h-4"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24">
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 8h16M4 16h16" />
-            <circle cx="9" cy="8" r="1" />
-            <circle cx="15" cy="8" r="1" />
-            <circle cx="9" cy="16" r="1" />
-            <circle cx="15" cy="16" r="1" />
-          </svg>
         </button>
       </div>
     </div>
@@ -147,5 +107,5 @@ defineProps({
   },
 });
 
-defineEmits(['refresh', 'copyCard', 'togglePin']);
+defineEmits(['refresh', 'togglePin']);
 </script>

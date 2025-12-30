@@ -47,17 +47,8 @@
       </div>
 
       <!-- 数据源列表 -->
-      <draggable
-        v-model="sources"
-        item-key="id"
-        tag="div"
-        class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6"
-        handle=".drag-handle"
-        animation="300"
-        ghost-class="opacity-50"
-        chosen-class="ring-2 ring-primary ring-offset-2 ring-offset-base-100"
-        :disabled="isPinnedMode">
-        <template #item="{ element: source }">
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+        <template v-for="source in sources" :key="source.id">
           <HotListCard
             v-if="shouldShowSource(source)"
             :source="source"
@@ -69,7 +60,7 @@
             @toggle-pin="togglePin"
             @set-element-ref="(el) => (sourceElements[source.id] = el)" />
         </template>
-      </draggable>
+      </div>
 
       <!-- 空状态 - 只在所有数据源都为空时显示 -->
       <div v-if="sources.length > 0 && filteredSources.length === 0" class="text-center py-12">
@@ -81,7 +72,6 @@
 </template>
 
 <script setup>
-import draggable from "vuedraggable";
 import { AppHeader, LoadingState, ErrorState, HotListCard } from "./components";
 
 const sources = ref([]);
@@ -91,51 +81,45 @@ const initialLoading = ref(false);
 const error = ref(null);
 const sourceElements = ref({});
 const pinnedSources = ref([]);
-const isPinnedMode = ref(false);
 const activeColumn = ref("all");
 const allSourcesData = ref({});
 
 const SOURCE_PREFERENCE_KEY = "hot-list-preference";
 
-// 获取保存的用户偏好设置
+// 获取保存的用户偏好设置（仅置顶）
 const getSavedPreference = () => {
   const saved = localStorage.getItem(SOURCE_PREFERENCE_KEY);
-  if (!saved) return { order: [], pinned: [] };
+  if (!saved) return { pinned: [] };
   try {
     const parsed = JSON.parse(saved);
     return {
-      order: parsed.order || [],
       pinned: parsed.pinned || [],
     };
   } catch {
-    return { order: [], pinned: [] };
+    return { pinned: [] };
   }
 };
 
 // 清理无效的源 ID（已删除的数据源）
 const cleanInvalidSources = (preference, validSourceIds) => {
   const cleaned = {
-    order: preference.order.filter(id => validSourceIds.includes(id)),
     pinned: preference.pinned.filter(id => validSourceIds.includes(id)),
   };
 
   // 如果有清理，更新 localStorage
-  if (
-    cleaned.order.length !== preference.order.length ||
-    cleaned.pinned.length !== preference.pinned.length
-  ) {
-    savePreference(cleaned.order, cleaned.pinned);
+  if (cleaned.pinned.length !== preference.pinned.length) {
+    savePreference(cleaned.pinned);
     console.log('已清理无效的数据源缓存');
   }
 
   return cleaned;
 };
 
-// 保存用户偏好设置
-const savePreference = (order, pinned) => {
+// 保存用户偏好设置（仅置顶）
+const savePreference = (pinned) => {
   localStorage.setItem(
     SOURCE_PREFERENCE_KEY,
-    JSON.stringify({ order, pinned })
+    JSON.stringify({ pinned })
   );
 };
 
@@ -152,19 +136,19 @@ const togglePin = (sourceId) => {
 
   pinnedSources.value = preference.pinned;
 
-  // 重新排序 sources
+  // 重新排序 sources（仅按置顶排序）
   const newSources = [...sources.value];
-  sortSourcesWithPinning(newSources, preference.pinned, preference.order);
+  sortSourcesWithPinning(newSources, preference.pinned);
   sources.value = newSources;
 
   // 保存偏好（同时清理无效源）
   const validSourceIds = sources.value.map(s => s.id);
   const cleaned = cleanInvalidSources(preference, validSourceIds);
-  savePreference(cleaned.order, cleaned.pinned);
+  savePreference(cleaned.pinned);
 };
 
-// 根据置顶状态排序
-const sortSourcesWithPinning = (sourceList, pinned, order) => {
+// 根据置顶状态排序（移除 order 依赖）
+const sortSourcesWithPinning = (sourceList, pinned) => {
   sourceList.sort((a, b) => {
     const aPinned = pinned.includes(a.id);
     const bPinned = pinned.includes(b.id);
@@ -173,16 +157,8 @@ const sortSourcesWithPinning = (sourceList, pinned, order) => {
     if (aPinned && !bPinned) return -1;
     if (!aPinned && bPinned) return 1;
 
-    // 都置顶或都不置顶，按 order 排序
-    const aIndex = order.indexOf(a.id);
-    const bIndex = order.indexOf(b.id);
-
-    // 如果不在 order 中，放到后面
-    if (aIndex === -1 && bIndex === -1) return 0;
-    if (aIndex === -1) return 1;
-    if (bIndex === -1) return -1;
-
-    return aIndex - bIndex;
+    // 都不置顶，保持原顺序
+    return 0;
   });
 };
 
@@ -336,22 +312,8 @@ const loadInitialData = async () => {
       allSourcesData.value[source.id] = source;
     });
 
-    // 应用排序和置顶
-    if (preference.order && Array.isArray(preference.order)) {
-      const sourceMap = new Map(sourceList.map((s) => [s.id, s]));
-      const orderedList = [];
-      preference.order.forEach((id) => {
-        if (sourceMap.has(id)) {
-          orderedList.push(sourceMap.get(id));
-          sourceMap.delete(id);
-        }
-      });
-      orderedList.push(...sourceMap.values());
-      sourceList = orderedList;
-    }
-
-    // 应用置顶排序
-    sortSourcesWithPinning(sourceList, preference.pinned || [], preference.order || []);
+    // 应用置顶排序（仅按置顶排序）
+    sortSourcesWithPinning(sourceList, preference.pinned || []);
     sources.value = sourceList;
 
     // 关键优化：立即为所有源设置 loading 状态，避免空白闪烁
@@ -380,13 +342,12 @@ watch(
   (newSources) => {
     if (!newSources || newSources.length === 0) return;
 
-    const order = newSources.map((s) => s.id);
     const pinned = pinnedSources.value;
 
-    // 清理无效源并保存
+    // 清理无效源并保存（仅保存置顶）
     const validSourceIds = newSources.map(s => s.id);
-    const cleaned = cleanInvalidSources({ order, pinned }, validSourceIds);
-    savePreference(cleaned.order, cleaned.pinned);
+    const cleaned = cleanInvalidSources({ pinned }, validSourceIds);
+    savePreference(cleaned.pinned);
 
     if (!observerInitialized) {
       nextTick(() => {
