@@ -41,8 +41,8 @@ COPY --from=base /app/.output ./.output
 RUN addgroup --system --gid 1001 nodejs
 RUN adduser --system --uid 1001 nuxt
 
-# 改变文件所有权
-RUN chown -R nuxt:nodejs .output
+# 创建数据目录并设置权限
+RUN mkdir -p /app/data/cache && chown -R nuxt:nodejs /app/data /app/.output
 
 # 切换到非 root 用户
 USER nuxt

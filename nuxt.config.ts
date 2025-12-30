@@ -46,11 +46,13 @@ export default defineNuxtConfig({
         url: process.env.REDIS_URL,
       } : undefined,
 
-      // 本地文件缓存
-      fs: {
-        driver: "fs",
-        base: "./data/cache",
-      },
+      // 本地文件缓存（仅在非 Vercel 环境启用）
+      ...(process.env.VERCEL ? {} : {
+        fs: {
+          driver: "fs",
+          base: "./data/cache",
+        },
+      }),
     },
 
     // 预设（自动检测，Vercel 环境使用 vercel 预设）
