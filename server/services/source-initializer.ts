@@ -28,11 +28,11 @@ export function registerSourceHandlers(handlers: Record<string, () => Promise<Ne
  * 从旧的 hot-list.service.ts 导入格式转换
  * 这是一个过渡方案，用于兼容现有代码
  */
-export function migrateFromOldService(oldFetchers: Record<string, () => Promise<NewsItem[]>>) {
+export async function migrateFromOldService(oldFetchers: Record<string, () => Promise<NewsItem[]>>) {
   logger.info('从旧服务迁移数据源处理器...');
 
-  // 从 pre-sources 导入配置
-  const preSources = require('../../shared/pre-sources');
+  // 从 pre-sources 导入配置（使用动态 import）
+  const preSources = await import('../../shared/pre-sources');
   const originSources = preSources.originSources;
 
   for (const [id, handler] of Object.entries(oldFetchers)) {

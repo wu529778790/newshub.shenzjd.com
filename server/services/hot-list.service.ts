@@ -102,6 +102,6 @@ export async function getHotList(id: string): Promise<NewsItem[]> {
  * 初始化旧服务到新注册表的迁移
  * 在应用启动时调用一次
  */
-export function initializeLegacyMigration() {
-  migrateFromOldService(fetcherMap);
+export async function initializeLegacyMigration() {
+  await migrateFromOldService(fetcherMap);
 }
