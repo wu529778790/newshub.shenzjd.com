@@ -62,9 +62,6 @@ coverage
 # Yarn Integrity file
 .yarn-integrity
 
-# GitHub
-.github
-
 # Development configs
 .eslintrc.*
 .prettierrc.*
