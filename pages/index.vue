@@ -1,11 +1,24 @@
 <template>
-  <div
-    class="min-h-screen bg-gradient-to-br from-base-100 via-base-50 to-base-100">
-    <!-- 头部区域 -->
-    <AppHeader :source-count="sources.length" @refresh="reloadPage" />
+  <div class="min-h-screen relative overflow-hidden">
+    <!-- 动态背景 -->
+    <div class="fixed inset-0 -z-10">
+      <div class="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-900 dark:via-blue-950 dark:to-purple-950 transition-colors duration-500"></div>
+      <div class="absolute top-0 left-0 w-full h-full opacity-30 dark:opacity-20">
+        <div class="absolute top-10 left-10 w-72 h-72 bg-blue-400 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-20 right-20 w-96 h-96 bg-purple-400 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s"></div>
+      </div>
+    </div>
+
+    <!-- 新版头部 -->
+    <NewHeader
+      :source-count="sources.length"
+      :loading="globalLoading"
+      @refresh="refreshAll"
+      @search="handleSearch"
+      @toggle-layout="toggleLayout" />
 
     <!-- 初始加载状态 -->
-    <LoadingState v-if="initialLoading" message="正在加载数据源..." />
+    <LoadingState v-if="initialLoading" message="正在初始化数据源..." />
 
     <!-- 初始错误状态 -->
     <ErrorState
@@ -15,65 +28,137 @@
       @retry="reloadPage" />
 
     <!-- 主内容区域 -->
-    <main v-else class="container mx-auto px-6 py-8">
-      <!-- 分类筛选栏 -->
-      <div class="mb-6 flex flex-wrap items-center gap-2">
-        <!-- 全部按钮放在最前面 -->
-        <button
-          @click="activeColumn = 'all'"
-          class="btn btn-sm"
-          :class="[
-            activeColumn === 'all'
-              ? 'btn-primary'
-              : 'btn-ghost border border-base-300'
-          ]">
-          全部
-          <span class="ml-1 opacity-70 text-xs">({{ sources.length }})</span>
-        </button>
-        <!-- 其他分类按钮 -->
-        <button
-          v-for="col in columns"
-          :key="col.id"
-          @click="activeColumn = col.id"
-          class="btn btn-sm"
-          :class="[
-            activeColumn === col.id
-              ? 'btn-primary'
-              : 'btn-ghost border border-base-300'
-          ]">
-          {{ col.name }}
-          <span class="ml-1 opacity-70 text-xs">({{ col.count }})</span>
-        </button>
+    <main v-else class="container mx-auto px-4 py-6 md:py-8">
+      <!-- 工具栏 - 分类 + 视图切换 -->
+      <div class="mb-6">
+        <!-- 分类和视图控制 -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <!-- 分类筛选 -->
+          <div class="flex flex-wrap items-center gap-2">
+            <button
+              @click="activeColumn = 'all'"
+              class="btn btn-sm md:btn-md gap-2"
+              :class="[
+                activeColumn === 'all'
+                  ? 'btn-primary shadow-lg shadow-primary/30'
+                  : 'btn-ghost border border-base-300/50 hover:border-primary/30'
+              ]">
+              <span>🌐 全部</span>
+              <span class="badge badge-ghost badge-sm">{{ sources.length }}</span>
+            </button>
+            <button
+              v-for="col in columns"
+              :key="col.id"
+              @click="activeColumn = col.id"
+              class="btn btn-sm md:btn-md gap-2"
+              :class="[
+                activeColumn === col.id
+                  ? 'btn-primary shadow-lg shadow-primary/30'
+                  : 'btn-ghost border border-base-300/50 hover:border-primary/30'
+              ]">
+              <span>{{ col.icon }} {{ col.name }}</span>
+              <span class="badge badge-ghost badge-sm">{{ col.count }}</span>
+            </button>
+          </div>
+
+          <!-- 视图切换和设置 -->
+          <div class="flex items-center gap-2">
+            <button
+              @click="toggleLayout"
+              class="btn btn-ghost btn-sm md:btn-md btn-circle"
+              title="切换布局">
+              <svg v-if="layout === 'grid'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
+              </svg>
+              <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+              </svg>
+            </button>
+            <button
+              @click="showSettings = true"
+              class="btn btn-ghost btn-sm md:btn-md btn-circle"
+              title="设置">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+            </button>
+          </div>
+        </div>
       </div>
 
       <!-- 数据源列表 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
+      <div
+        class="transition-all duration-300"
+        :class="[
+          layout === 'grid'
+            ? 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 md:gap-6'
+            : 'space-y-4 md:space-y-6 max-w-4xl mx-auto'
+        ]">
         <template v-for="source in sources" :key="source.id">
-          <HotListCard
+          <NewCard
             v-if="shouldShowSource(source)"
             :source="source"
             :items="hotItemsBySource[source.id] || []"
             :loading="loadingStates[source.id]"
             :is-pinned="pinnedSources.includes(source.id)"
+            :layout="layout"
             @refresh="refreshSource"
             @open-link="openLink"
             @toggle-pin="togglePin"
+            @generate-image="generateImage"
             @set-element-ref="(el) => (sourceElements[source.id] = el)" />
         </template>
       </div>
 
-      <!-- 空状态 - 只在所有数据源都为空时显示 -->
-      <div v-if="sources.length > 0 && filteredSources.length === 0" class="text-center py-12">
-        <div class="text-6xl mb-4">🔍</div>
-        <p class="text-lg text-base-content/60">该分类下暂无数据源</p>
+      <!-- 空状态 -->
+      <div v-if="sources.length > 0 && filteredSources.length === 0" class="text-center py-16">
+        <div class="text-6xl mb-4 animate-bounce">🔍</div>
+        <h3 class="text-xl font-semibold mb-2">未找到匹配内容</h3>
+        <p class="text-base-content/60 mb-4">尝试调整搜索关键词或分类筛选</p>
+        <button @click="clearSearch" class="btn btn-primary btn-outline">清除搜索</button>
+      </div>
+
+      <!-- 悬浮操作按钮 (移动端) -->
+      <div class="fixed bottom-6 right-6 md:hidden z-40">
+        <button
+          @click="refreshAll"
+          :disabled="globalLoading"
+          class="btn btn-primary btn-circle btn-lg shadow-2xl shadow-primary/40"
+          :class="{ 'animate-spin': globalLoading }">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
       </div>
     </main>
+
+    <!-- 搜索弹窗 -->
+    <SearchModal
+      v-if="showSearch"
+      :sources="sources"
+      :hot-items="hotItemsBySource"
+      @close="showSearch = false"
+      @open-link="openLink" />
+
+    <!-- 设置弹窗 -->
+    <SettingsModal
+      v-if="showSettings"
+      @close="showSettings = false"
+      @save="handleSettingsSave" />
   </div>
 </template>
 
 <script setup>
-import { AppHeader, LoadingState, ErrorState, HotListCard } from "./components";
+// 导入组件 - 使用新的组件结构
+import LoadingState from "./components/LoadingState.vue";
+import ErrorState from "./components/ErrorState.vue";
+import NewHeader from "./components/NewHeader.vue";
+import NewCard from "./components/NewCard.vue";
+import SearchModal from "./components/SearchModal.vue";
+import SettingsModal from "./components/SettingsModal.vue";
 
+// 响应式状态
 const sources = ref([]);
 const hotItemsBySource = ref({});
 const loadingStates = ref({});
@@ -84,43 +169,51 @@ const pinnedSources = ref([]);
 const activeColumn = ref("all");
 const allSourcesData = ref({});
 
-const SOURCE_PREFERENCE_KEY = "hot-list-preference";
+// 新增功能状态
+const layout = ref("grid"); // 'grid' 或 'list'
+const showSearch = ref(false);
+const showSettings = ref(false);
+const globalLoading = ref(false);
 
-// 获取保存的用户偏好设置（仅置顶）
+// 配置
+const SOURCE_PREFERENCE_KEY = "hot-list-preference-v2";
+
+// 获取保存的用户偏好设置
 const getSavedPreference = () => {
   const saved = localStorage.getItem(SOURCE_PREFERENCE_KEY);
-  if (!saved) return { pinned: [] };
+  if (!saved) return { pinned: [], layout: "grid" };
   try {
     const parsed = JSON.parse(saved);
     return {
       pinned: parsed.pinned || [],
+      layout: parsed.layout || "grid",
     };
   } catch {
-    return { pinned: [] };
+    return { pinned: [], layout: "grid" };
   }
 };
 
-// 清理无效的源 ID（已删除的数据源）
+// 保存用户偏好设置
+const savePreference = (pinned, layoutType = "grid") => {
+  localStorage.setItem(
+    SOURCE_PREFERENCE_KEY,
+    JSON.stringify({ pinned, layout: layoutType })
+  );
+};
+
+// 清理无效的源 ID
 const cleanInvalidSources = (preference, validSourceIds) => {
   const cleaned = {
     pinned: preference.pinned.filter(id => validSourceIds.includes(id)),
+    layout: preference.layout || "grid",
   };
 
-  // 如果有清理，更新 localStorage
   if (cleaned.pinned.length !== preference.pinned.length) {
-    savePreference(cleaned.pinned);
+    savePreference(cleaned.pinned, cleaned.layout);
     console.log('已清理无效的数据源缓存');
   }
 
   return cleaned;
-};
-
-// 保存用户偏好设置（仅置顶）
-const savePreference = (pinned) => {
-  localStorage.setItem(
-    SOURCE_PREFERENCE_KEY,
-    JSON.stringify({ pinned })
-  );
 };
 
 // 切换置顶状态
@@ -136,28 +229,26 @@ const togglePin = (sourceId) => {
 
   pinnedSources.value = preference.pinned;
 
-  // 重新排序 sources（仅按置顶排序）
+  // 重新排序 sources
   const newSources = [...sources.value];
   sortSourcesWithPinning(newSources, preference.pinned);
   sources.value = newSources;
 
-  // 保存偏好（同时清理无效源）
+  // 保存偏好
   const validSourceIds = sources.value.map(s => s.id);
   const cleaned = cleanInvalidSources(preference, validSourceIds);
-  savePreference(cleaned.pinned);
+  savePreference(cleaned.pinned, layout.value);
 };
 
-// 根据置顶状态排序（移除 order 依赖）
+// 根据置顶状态排序
 const sortSourcesWithPinning = (sourceList, pinned) => {
   sourceList.sort((a, b) => {
     const aPinned = pinned.includes(a.id);
     const bPinned = pinned.includes(b.id);
 
-    // 置顶的在前面
     if (aPinned && !bPinned) return -1;
     if (!aPinned && bPinned) return 1;
 
-    // 都不置顶，保持原顺序
     return 0;
   });
 };
@@ -169,16 +260,63 @@ const openLink = (url) => {
   }
 };
 
+// 生成图片
+const generateImage = async (source) => {
+  console.log(`生成图片: ${source.name}`);
+  // 这里可以调用图片生成 API
+  try {
+    const items = hotItemsBySource.value[source.id];
+    if (!items || items.length === 0) {
+      alert("暂无数据可生成图片");
+      return;
+    }
+
+    // 调用图片生成 API
+    const url = `/api/image/${source.id}`;
+    window.open(url, "_blank");
+  } catch (err) {
+    console.error("生成图片失败:", err);
+    alert("生成图片失败，请重试");
+  }
+};
+
+// 搜索处理
+const handleSearch = () => {
+  showSearch.value = true;
+};
+
+// 布局切换
+const toggleLayout = () => {
+  layout.value = layout.value === "grid" ? "list" : "grid";
+  savePreference(pinnedSources.value, layout.value);
+};
+
+// 设置保存
+const handleSettingsSave = (settings) => {
+  // 处理设置保存逻辑
+  showSettings.value = false;
+  console.log("保存设置:", settings);
+};
+
+// 分类图标映射
+const columnIcons = {
+  china: '🇨🇳',
+  world: '🌍',
+  tech: '💻',
+  finance: '💰',
+  culture: '📚',
+};
+
 // 分类计算
 const columns = computed(() => {
   const cols = [
-    { id: 'china', name: '国内', count: 0 },
-    { id: 'world', name: '国际', count: 0 },
-    { id: 'tech', name: '科技', count: 0 },
-    { id: 'finance', name: '财经', count: 0 },
+    { id: 'china', name: '国内', count: 0, icon: columnIcons.china },
+    { id: 'world', name: '国际', count: 0, icon: columnIcons.world },
+    { id: 'tech', name: '科技', count: 0, icon: columnIcons.tech },
+    { id: 'finance', name: '财经', count: 0, icon: columnIcons.finance },
+    { id: 'culture', name: '文化', count: 0, icon: columnIcons.culture },
   ];
 
-  // 计算每个分类的数量
   sources.value.forEach(source => {
     const sourceData = allSourcesData.value[source.id];
     if (sourceData && sourceData.column) {
@@ -187,50 +325,45 @@ const columns = computed(() => {
     }
   });
 
-  // 过滤掉没有数据的分类
   return cols.filter(c => c.count > 0);
 });
 
 // 判断是否显示该数据源
 const shouldShowSource = (source) => {
-  if (activeColumn.value === 'all') return true;
+  // 分类过滤
+  if (activeColumn.value !== 'all') {
+    const sourceData = allSourcesData.value[source.id];
+    if (!sourceData || sourceData.column !== activeColumn.value) {
+      return false;
+    }
+  }
 
-  const sourceData = allSourcesData.value[source.id];
-  return sourceData && sourceData.column === activeColumn.value;
+  return true;
 };
 
-// 计算当前筛选后的源列表（用于空状态判断）
+// 计算当前筛选后的源列表
 const filteredSources = computed(() => {
   return sources.value.filter(shouldShowSource);
 });
 
+// 获取单个数据源数据
 const fetchHotListForSource = async (source, isRefresh = false, retryCount = 0) => {
-  // 如果正在加载中，除非是强制刷新，否则跳过
   if (loadingStates.value[source.id] && !isRefresh) return;
+  if (!isRefresh && hotItemsBySource.value[source.id]?.length > 0) return;
 
-  // 只有在非刷新且已有数据时才跳过
-  if (!isRefresh && hotItemsBySource.value[source.id]?.length > 0) {
-    return;
-  }
-
-  // 设置 loading 状态
   loadingStates.value = { ...loadingStates.value, [source.id]: true };
 
   try {
     const params = { id: source.id };
-    // 如果是刷新操作，添加refresh参数强制重新获取数据
-    if (isRefresh) {
-      params.refresh = "true";
-    }
+    if (isRefresh) params.refresh = "true";
 
     const items = await $fetch("/api/hot-list", {
       params,
-      retry: 2,  // 增加重试次数
-      retryDelay: 1000,  // 重试延迟
-      timeout: 15000  // 增加超时时间
+      retry: 2,
+      retryDelay: 1000,
+      timeout: 15000
     });
 
-    // 如果返回空数组且不是刷新，自动重试一次
     if ((!items || items.length === 0) && !isRefresh && retryCount < 1) {
       console.warn(`Empty data for ${source.id}, retrying...`);
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -244,7 +377,6 @@ const fetchHotListForSource = async (source, isRefresh = false, retryCount = 0) 
   } catch (err) {
     console.error(`Failed to fetch hot list for ${source.id}:`, err);
 
-    // 失败时自动重试（最多2次）
     if (retryCount < 2) {
       console.warn(`Retry ${retryCount + 1}/2 for ${source.id}`);
       await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1)));
@@ -257,15 +389,30 @@ const fetchHotListForSource = async (source, isRefresh = false, retryCount = 0) 
   }
 };
 
+// 刷新单个源
 const refreshSource = async (source) => {
   await fetchHotListForSource(source, true);
 };
 
+// 刷新所有源
+const refreshAll = async () => {
+  if (globalLoading.value) return;
+
+  globalLoading.value = true;
+  try {
+    const promises = sources.value.map(source =>
+      fetchHotListForSource(source, true).catch(() => {})
+    );
+    await Promise.all(promises);
+  } finally {
+    globalLoading.value = false;
+  }
+};
+
+// 懒加载观察者
 let observer;
 const setupObserver = () => {
-  if (observer) {
-    observer.disconnect();
-  }
+  if (observer) observer.disconnect();
 
   observer = new IntersectionObserver(
     (entries) => {
@@ -291,33 +438,33 @@ const setupObserver = () => {
   }
 };
 
+// 加载初始数据
 const loadInitialData = async () => {
   initialLoading.value = true;
   error.value = null;
   try {
+    // 1. 先获取数据源列表
     let sourceList = await $fetch("/api/sources");
 
-    // 获取所有有效的源 ID
+    // 2. 获取并清理保存的偏好设置
     const validSourceIds = sourceList.map(s => s.id);
-
-    // 获取并清理保存的偏好设置
     let preference = getSavedPreference();
     preference = cleanInvalidSources(preference, validSourceIds);
 
-    // 保存置顶状态
+    // 3. 保存状态
     pinnedSources.value = preference.pinned || [];
+    layout.value = preference.layout || "grid";
 
-    // 保存完整的源数据（用于分类）
+    // 4. 保存完整的源数据
     sourceList.forEach(source => {
       allSourcesData.value[source.id] = source;
     });
 
-    // 应用置顶排序（仅按置顶排序）
+    // 5. 应用置顶排序
     sortSourcesWithPinning(sourceList, preference.pinned || []);
     sources.value = sourceList;
 
-    // 关键优化：立即为所有源设置 loading 状态，避免空白闪烁
-    // 这样卡片一显示就会看到 loading，而不是空白
+    // 6. 设置初始 loading 状态（依赖服务器缓存）
     const initialLoadingStates = {};
     sourceList.forEach(source => {
       initialLoadingStates[source.id] = true;
@@ -332,10 +479,12 @@ const loadInitialData = async () => {
   }
 };
 
+// 重新加载页面
 const reloadPage = () => {
   window.location.reload();
 };
 
+// 监听器
 let observerInitialized = false;
 watch(
   sources,
@@ -343,11 +492,9 @@ watch(
     if (!newSources || newSources.length === 0) return;
 
     const pinned = pinnedSources.value;
-
-    // 清理无效源并保存（仅保存置顶）
     const validSourceIds = newSources.map(s => s.id);
-    const cleaned = cleanInvalidSources({ pinned }, validSourceIds);
-    savePreference(cleaned.pinned);
+    const cleaned = cleanInvalidSources({ pinned, layout: layout.value }, validSourceIds);
+    savePreference(cleaned.pinned, cleaned.layout);
 
     if (!observerInitialized) {
       nextTick(() => {
@@ -359,13 +506,13 @@ watch(
   { deep: true }
 );
 
+// 生命周期
 onMounted(() => {
   loadInitialData();
 
-  // 监听页面可见性变化，页面重新可见时检查数据
+  // 页面可见性变化处理
   const handleVisibilityChange = () => {
     if (!document.hidden && sources.value.length > 0) {
-      // 页面重新可见，检查是否有空数据的源并重新加载
       sources.value.forEach(source => {
         const items = hotItemsBySource.value[source.id];
         if (!items || items.length === 0) {
@@ -378,12 +525,68 @@ onMounted(() => {
 
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
+  // 键盘快捷键
+  const handleKeydown = (e) => {
+    // Ctrl/Cmd + R: 刷新全部
+    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+      e.preventDefault();
+      refreshAll();
+    }
+    // Ctrl/Cmd + F: 聚焦搜索
+    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+      e.preventDefault();
+      const searchInput = document.querySelector('input[type="text"]');
+      if (searchInput) searchInput.focus();
+    }
+  };
+
+  document.addEventListener('keydown', handleKeydown);
+
   // 清理函数
   onUnmounted(() => {
-    if (observer) {
-      observer.disconnect();
-    }
+    if (observer) observer.disconnect();
     document.removeEventListener('visibilitychange', handleVisibilityChange);
+    document.removeEventListener('keydown', handleKeydown);
   });
 });
 </script>
+
+<style scoped>
+/* 玻璃拟态输入框样式 */
+.glass-input {
+  backdrop-filter: blur(10px);
+  transition: all 0.3s ease;
+}
+
+.glass-input:focus {
+  backdrop-filter: blur(16px);
+  transform: translateY(-1px);
+}
+
+/* 自定义滚动条 */
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.3);
+  border-radius: 3px;
+}
+
+.scrollbar-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(148, 163, 184, 0.5);
+}
+
+/* 动画优化 */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+</style>

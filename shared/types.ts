@@ -132,6 +132,10 @@ export interface Source {
    */
   disable?: boolean | "cf";
   redirect?: SourceID;
+  /**
+   * 图标 (emoji 或 SVG)
+   */
+  icon?: string;
 }
 
 export interface Column {

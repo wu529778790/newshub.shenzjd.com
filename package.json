@@ -25,7 +25,11 @@
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "clean": "rm -rf .nuxt .output node_modules/.vite",
-    "clean:all": "rm -rf .nuxt .output node_modules pnpm-lock.yaml"
+    "clean:all": "rm -rf .nuxt .output node_modules pnpm-lock.yaml",
+    "ui:new": "node scripts/switch-ui.js new",
+    "ui:old": "node scripts/switch-ui.js old",
+    "ui:status": "node scripts/switch-ui.js status",
+    "ui:help": "node scripts/switch-ui.js help"
   },
   "dependencies": {
     "@nuxtjs/tailwindcss": "^6.14.0",

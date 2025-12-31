@@ -19,6 +19,7 @@ export const originSources = {
     column: "china",
     color: "blue",
     home: "https://www.zhihu.com",
+    icon: "💭",
   },
   weibo: {
     name: "微博",
@@ -28,6 +29,7 @@ export const originSources = {
     color: "red",
     interval: Time.Realtime,
     home: "https://weibo.com",
+    icon: "🌐",
   },
   coolapk: {
     name: "酷安",
@@ -36,6 +38,7 @@ export const originSources = {
     color: "green",
     title: "今日最热",
     home: "https://coolapk.com",
+    icon: "📱",
   },
 
   wallstreetcn: {
@@ -43,6 +46,7 @@ export const originSources = {
     color: "blue",
     column: "finance",
     home: "https://wallstreetcn.com/",
+    icon: "💰",
     sub: {
       news: {
         title: "最新",
@@ -63,6 +67,7 @@ export const originSources = {
     disable: "cf",
     home: "https://36kr.com",
     column: "tech",
+    icon: "🚀",
     sub: {
       quick: {
         title: "快讯",
@@ -75,6 +80,7 @@ export const originSources = {
     column: "china",
     color: "gray",
     home: "https://www.douyin.com",
+    icon: "🎵",
   },
   hupu: {
     name: "虎扑",
@@ -83,6 +89,7 @@ export const originSources = {
     title: "主干道热帖",
     type: "hottest",
     color: "red",
+    icon: "🏀",
   },
   tieba: {
     name: "百度贴吧",
@@ -91,6 +98,7 @@ export const originSources = {
     type: "hottest",
     color: "blue",
     home: "https://tieba.baidu.com",
+    icon: "💬",
   },
   toutiao: {
     name: "今日头条",
@@ -98,6 +106,7 @@ export const originSources = {
     column: "china",
     color: "red",
     home: "https://www.toutiao.com",
+    icon: "📰",
   },
   ithome: {
     name: "IT之家",
@@ -105,6 +114,7 @@ export const originSources = {
     column: "tech",
     type: "realtime",
     home: "https://www.ithome.com",
+    icon: "💻",
   },
   thepaper: {
     name: "澎湃新闻",
@@ -114,12 +124,14 @@ export const originSources = {
     title: "热榜",
     color: "gray",
     home: "https://www.thepaper.cn",
+    icon: "🗞️",
   },
   sputniknewscn: {
     name: "卫星通讯社",
     color: "orange",
     column: "world",
     home: "https://sputniknews.cn",
+    icon: "📡",
   },
   cankaoxiaoxi: {
     name: "参考消息",
@@ -127,12 +139,14 @@ export const originSources = {
     column: "world",
     interval: Time.Common,
     home: "https://china.cankaoxiaoxi.com",
+    icon: "📋",
   },
   pcbeta: {
     name: "远景论坛",
     color: "blue",
     column: "tech",
     home: "https://bbs.pcbeta.com",
+    icon: "🖥️",
     sub: {
       windows11: {
         title: "Win11",
@@ -147,6 +161,7 @@ export const originSources = {
     color: "blue",
     home: "https://xueqiu.com",
     column: "finance",
+    icon: "📈",
     sub: {
       hotstock: {
         title: "热门股票",
@@ -163,12 +178,14 @@ export const originSources = {
     type: "realtime",
     interval: Time.Realtime,
     home: "https://www.gelonghui.com",
+    icon: "📊",
   },
   fastbull: {
     name: "法布财经",
     color: "emerald",
     home: "https://www.fastbull.cn",
     column: "finance",
+    icon: "💹",
     sub: {
       news: {
         title: "头条",
@@ -182,6 +199,7 @@ export const originSources = {
     column: "tech",
     home: "https://solidot.org",
     interval: Time.Slow,
+    icon: "🐧",
   },
 
   github: {
@@ -189,6 +207,7 @@ export const originSources = {
     color: "gray",
     home: "https://github.com/",
     column: "tech",
+    icon: "🐙",
     sub: {
       "trending-today": {
         title: "Today",
@@ -200,6 +219,7 @@ export const originSources = {
     name: "哔哩哔哩",
     color: "blue",
     home: "https://www.bilibili.com",
+    icon: "📺",
     sub: {
       "hot-search": {
         title: "热搜",
@@ -229,6 +249,7 @@ export const originSources = {
     // cloudflare pages cannot access
     disable: "cf",
     home: "https://www.kuaishou.com",
+    icon: "📹",
   },
   jin10: {
     name: "金十数据",
@@ -236,6 +257,7 @@ export const originSources = {
     color: "blue",
     type: "realtime",
     home: "https://www.jin10.com",
+    icon: "⏱️",
   },
   baidu: {
     name: "百度热搜",
@@ -243,6 +265,7 @@ export const originSources = {
     color: "blue",
     type: "hottest",
     home: "https://www.baidu.com",
+    icon: "🔍",
   },
 
   nowcoder: {
@@ -251,6 +274,7 @@ export const originSources = {
     color: "blue",
     type: "hottest",
     home: "https://www.nowcoder.com",
+    icon: "🎓",
   },
   sspai: {
     name: "少数派",
@@ -258,6 +282,7 @@ export const originSources = {
     color: "red",
     type: "hottest",
     home: "https://sspai.com",
+    icon: "📱",
   },
   juejin: {
     name: "稀土掘金",
@@ -265,6 +290,7 @@ export const originSources = {
     color: "blue",
     type: "hottest",
     home: "https://juejin.cn",
+    icon: "⛏️",
   },
   ifeng: {
     name: "凤凰网",
@@ -273,6 +299,7 @@ export const originSources = {
     type: "hottest",
     title: "热点资讯",
     home: "https://www.ifeng.com",
+    icon: "🦅",
   },
 
   // 新增数据源 - 第一优先级
@@ -283,6 +310,7 @@ export const originSources = {
     color: "orange",
     home: "https://news.ycombinator.com",
     interval: Time.Fast,
+    icon: "⚡",
   },
 
   bbcnews: {
@@ -292,6 +320,7 @@ export const originSources = {
     color: "red",
     home: "https://www.bbc.com/news",
     interval: Time.Common,
+    icon: "🇬🇧",
   },
 
   v2exnew: {
@@ -301,6 +330,7 @@ export const originSources = {
     color: "blue",
     home: "https://www.v2ex.com",
     interval: Time.Common,
+    icon: "🔧",
   },
 } as const satisfies Record<string, OriginSource>;
 
@@ -317,6 +347,7 @@ export function genSources() {
       home: source.home,
       color: source.color ?? "primary",
       interval: source.interval ?? Time.Default,
+      icon: source.icon,
     };
     if (source.sub && Object.keys(source.sub).length) {
       Object.entries(source.sub).forEach(([subId, subSource], i) => {
