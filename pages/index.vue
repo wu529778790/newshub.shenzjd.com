@@ -176,18 +176,14 @@ const globalLoading = ref(false);
 // 配置
 const SOURCE_PREFERENCE_KEY = "hot-list-preference-v2";
 
-// 数据源优先级分组
-const PRIORITY_GROUPS = {
-  high: ['weibo', 'baidu', 'zhihu', 'bilibili'],  // 前4个优先加载
-  medium: ['douyin', 'hupu', 'tieba', 'toutiao', 'ithome', 'xueqiu'], // 第二批
-  low: ['solidot', 'github', 'sspai', 'v2exnew', 'juejin', 'coolapk', 'kuaishou', 'bbcnews', 'hackernews', 'ifeng', 'jin10', 'gelonghui', 'fastbull', 'wallstreetcn', 'sputniknewscn', 'cankaoxiaoxi', 'pcbeta', 'nowcoder', 'thepaper']  // 最后加载
-};
-
-// 获取优先级
-const getPriority = (sourceId) => {
-  if (PRIORITY_GROUPS.high.includes(sourceId)) return 1;
-  if (PRIORITY_GROUPS.medium.includes(sourceId)) return 2;
-  return 3;
+// 滚动加载配置
+const LAZY_LOAD_CONFIG = {
+  // 可见区域外预加载距离（像素）
+  rootMargin: '300px',
+  // 每批并发数
+  batchSize: 3,
+  // 批次间隔
+  batchDelay: 100
 };
 
 // 获取保存的用户偏好设置
@@ -406,7 +402,7 @@ const refreshSource = async (source) => {
   await fetchHotListForSource(source, true);
 };
 
-// 刷新所有源 - 使用分批刷新
+// 刷新所有源 - 按顺序刷新
 const refreshAll = async () => {
   if (globalLoading.value) return;
 
@@ -414,19 +410,18 @@ const refreshAll = async () => {
   try {
     console.log('🔄 开始刷新所有数据源...');
 
-    // 按优先级分组
-    const groupedSources = {
-      high: sources.value.filter(s => PRIORITY_GROUPS.high.includes(s.id)),
-      medium: sources.value.filter(s => PRIORITY_GROUPS.medium.includes(s.id)),
-      low: sources.value.filter(s => !PRIORITY_GROUPS.high.includes(s.id) && !PRIORITY_GROUPS.medium.includes(s.id))
-    };
+    // 按当前显示顺序刷新
+    const promises = sources.value.map(source =>
+      loadSingleSource(source).catch(() => {})
+    );
 
-    // 分批刷新
-    await loadBatch(groupedSources.high, 0);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    await loadBatch(groupedSources.medium, 0);
-    await new Promise(resolve => setTimeout(resolve, 300));
-    await loadBatch(groupedSources.low, 0);
+    // 控制并发，避免请求风暴
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < promises.length; i += BATCH_SIZE) {
+      const batch = promises.slice(i, i + BATCH_SIZE);
+      await Promise.allSettled(batch);
+      await new Promise(resolve => setTimeout(resolve, 100)); // 批次间隔
+    }
 
     console.log('✅ 所有数据源刷新完成');
   } catch (err) {
@@ -436,7 +431,7 @@ const refreshAll = async () => {
   }
 };
 
-// 加载初始数据 - 立即显示 + 后台刷新
+// 加载初始数据 - 按显示顺序 + 懒加载
 const loadInitialData = async () => {
   initialLoading.value = true;
   error.value = null;
@@ -459,45 +454,30 @@ const loadInitialData = async () => {
       allSourcesData.value[source.id] = source;
     });
 
-    // 5. 应用置顶排序
+    // 5. 应用置顶排序（置顶的在最前面）
     sortSourcesWithPinning(sourceList, preference.pinned || []);
     sources.value = sourceList;
 
-    // 6. 立即开始并行加载数据（控制并发）
-    console.log('🚀 开始并行加载数据源...');
+    // 6. 按顺序加载数据（用户从上到下看到的顺序）
+    console.log('🚀 开始按顺序加载数据源...');
 
-    // 按优先级分组
-    const groupedSources = {
-      high: sourceList.filter(s => PRIORITY_GROUPS.high.includes(s.id)),
-      medium: sourceList.filter(s => PRIORITY_GROUPS.medium.includes(s.id)),
-      low: sourceList.filter(s => !PRIORITY_GROUPS.high.includes(s.id) && !PRIORITY_GROUPS.medium.includes(s.id))
-    };
+    // 使用 IntersectionObserver 实现懒加载
+    setupLazyLoadObserver();
 
-    // 立即开始加载所有数据，但控制并发
-    // 高优先级：立即启动
-    const highPromise = loadBatch(groupedSources.high, 0);
+    // 立即加载前几个可见的源（首屏）
+    const firstBatch = sources.value.slice(0, 4);
+    console.log(`📥 加载首屏数据: ${firstBatch.length}个源`);
+    await loadBatch(firstBatch, 0);
 
-    // 中优先级：延迟100ms启动（错开请求）
-    const mediumPromise = new Promise(resolve => {
+    // 后台继续加载剩余的源
+    const remaining = sources.value.slice(4);
+    if (remaining.length > 0) {
       setTimeout(async () => {
-        await loadBatch(groupedSources.medium, 0);
-        resolve();
-      }, 100);
-    });
-
-    // 低优先级：延迟200ms启动
-    const lowPromise = new Promise(resolve => {
-      setTimeout(async () => {
-        await loadBatch(groupedSources.low, 0);
-        resolve();
-      }, 200);
-    });
-
-    // 不等待全部完成，让数据逐步显示
-    // 但保持一个后台任务来跟踪完成状态
-    Promise.allSettled([highPromise, mediumPromise, lowPromise]).then(() => {
-      console.log('🎉 所有数据源加载完成');
-    });
+        console.log(`📥 后台加载剩余: ${remaining.length}个源`);
+        await loadBatch(remaining, 0);
+        console.log('🎉 所有数据源加载完成');
+      }, 500);
+    }
 
   } catch (err) {
     console.error("Failed to fetch sources:", err);
@@ -508,14 +488,52 @@ const loadInitialData = async () => {
   }
 };
 
+// 懒加载观察者
+let observer;
+const setupLazyLoadObserver = () => {
+  if (observer) observer.disconnect();
+
+  observer = new IntersectionObserver(
+    (entries) => {
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          const sourceId = entry.target.dataset.sourceId;
+          const source = sources.value.find((s) => s.id === sourceId);
+
+          // 如果该源还没有数据，且不在加载中，则加载它
+          if (source &&
+              !hotItemsBySource.value[sourceId]?.length &&
+              !loadingStates.value[sourceId]) {
+            console.log(`🔍 滚动到可见区域，加载: ${source.name}`);
+            loadSingleSource(source);
+          }
+
+          // 停止观察已加载的源
+          observer.unobserve(entry.target);
+        }
+      }
+    },
+    {
+      rootMargin: LAZY_LOAD_CONFIG.rootMargin,
+      threshold: 0.1
+    }
+  );
+
+  // 观察所有卡片元素（在渲染后）
+  setTimeout(() => {
+    const cards = document.querySelectorAll('[data-source-id]');
+    cards.forEach(card => observer.observe(card));
+  }, 100);
+};
+
 // 加载一批数据源（带并发控制）
 const loadBatch = async (sourceBatch, delay = 0) => {
   if (delay > 0) {
     await new Promise(resolve => setTimeout(resolve, delay));
   }
 
-  // 限制并发数为3
-  const CONCURRENT_LIMIT = 3;
+  // 限制并发数
+  const CONCURRENT_LIMIT = LAZY_LOAD_CONFIG.batchSize;
   const batches = [];
 
   for (let i = 0; i < sourceBatch.length; i += CONCURRENT_LIMIT) {
@@ -526,13 +544,17 @@ const loadBatch = async (sourceBatch, delay = 0) => {
   for (const batch of batches) {
     const promises = batch.map(source => loadSingleSource(source));
     await Promise.allSettled(promises);
-    // 批次间稍作延迟，避免请求风暴
-    await new Promise(resolve => setTimeout(resolve, 100));
+    // 批次间延迟
+    await new Promise(resolve => setTimeout(resolve, LAZY_LOAD_CONFIG.batchDelay));
   }
 };
 
 // 加载单个数据源
 const loadSingleSource = async (source) => {
+  // 避免重复加载
+  if (loadingStates.value[source.id]) return;
+  if (hotItemsBySource.value[source.id]?.length > 0) return;
+
   loadingStates.value = { ...loadingStates.value, [source.id]: true };
 
   try {

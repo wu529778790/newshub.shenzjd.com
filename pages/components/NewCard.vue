@@ -24,7 +24,9 @@
     </div>
 
     <!-- 卡片内容 -->
-    <div class="backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 relative">
+    <div
+      class="backdrop-blur-xl border border-slate-200/50 dark:border-slate-700/50 relative"
+      :data-source-id="source.id">
 
       <!-- 头部 -->
       <div class="p-4 md:p-5 border-b border-slate-200/50 dark:border-slate-700/50">
