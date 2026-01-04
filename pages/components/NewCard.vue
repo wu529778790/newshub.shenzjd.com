@@ -1,8 +1,6 @@
 <template>
   <section
-    :ref="(el) => $emit('setElementRef', el)"
     :key="source.id"
-    :data-source-id="source.id"
     class="relative overflow-hidden transition-all duration-300"
     :class="[
       layout === 'grid' ? 'rounded-2xl' : 'rounded-xl',
@@ -118,10 +116,38 @@
 
       <!-- 内容区域 -->
       <div class="relative">
-        <!-- 加载状态 -->
-        <div v-if="loading" class="p-6 flex flex-col items-center justify-center space-y-3 min-h-[200px]">
-          <div class="w-8 h-8 border-3 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
-          <p class="text-sm text-slate-500">正在加载热点...</p>
+        <!-- 加载状态 - 骨架屏优化 -->
+        <div v-if="loading" class="p-4 space-y-3 min-h-[200px]">
+          <!-- 标题骨架 -->
+          <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-3/4"></div>
+          <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-1/2"></div>
+          <div class="h-4 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-2/3"></div>
+          <!-- 分隔线 -->
+          <div class="h-px bg-slate-200 dark:bg-slate-700 my-2"></div>
+          <!-- 内容骨架 -->
+          <div class="space-y-2">
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-slate-200 dark:bg-slate-700 rounded-full flex-shrink-0 animate-pulse"></div>
+              <div class="flex-1 space-y-2">
+                <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-full"></div>
+                <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-5/6"></div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-slate-200 dark:bg-slate-700 rounded-full flex-shrink-0 animate-pulse"></div>
+              <div class="flex-1 space-y-2">
+                <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-5/6"></div>
+                <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-4/6"></div>
+              </div>
+            </div>
+            <div class="flex gap-3">
+              <div class="w-6 h-6 bg-slate-200 dark:bg-slate-700 rounded-full flex-shrink-0 animate-pulse"></div>
+              <div class="flex-1 space-y-2">
+                <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-4/6"></div>
+                <div class="h-3 bg-slate-200 dark:bg-slate-700 rounded animate-pulse w-3/6"></div>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- 内容列表 -->
@@ -130,10 +156,10 @@
             class="max-h-96 overflow-y-auto custom-scrollbar"
             :class="layout === 'grid' ? 'space-y-1' : 'space-y-1.5'">
             <div
-              v-for="(item, index) in items.slice(0, 12)"
+              v-for="(item, index) in visibleItems"
               :key="item.id"
               class="group flex items-start gap-3 p-3 rounded-lg hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-all cursor-pointer border border-transparent hover:border-slate-200 dark:hover:border-slate-600"
-              @click="$emit('openLink', item.url)">
+              @click="debouncedOpenLink(item.url)">
               <!-- 排名徽章 -->
               <div class="flex-shrink-0">
                 <div
@@ -213,6 +239,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   source: {
     type: Object,
@@ -237,7 +265,28 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['refresh', 'openLink', 'togglePin', 'generateImage', 'setElementRef'])
+const emit = defineEmits(['refresh', 'openLink', 'togglePin', 'generateImage'])
+
+// 优化：只渲染前12条可见内容，减少DOM节点
+const visibleItems = computed(() => {
+  return props.items.slice(0, 12)
+})
+
+// 防抖函数
+const debounce = (fn, delay) => {
+  let timer = null
+  return (...args) => {
+    clearTimeout(timer)
+    timer = setTimeout(() => fn(...args), delay)
+  }
+}
+
+// 防抖的打开链接
+const debouncedOpenLink = debounce((url) => {
+  if (url) {
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }
+}, 150)
 
 // 格式化时间间隔
 const formatInterval = (ms) => {

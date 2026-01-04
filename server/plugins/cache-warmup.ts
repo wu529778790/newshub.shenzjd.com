@@ -1,25 +1,29 @@
 import { sourceRegistry } from '~/server/utils/source-registry';
 import { logger } from '~/server/utils/logger';
 import { getCacheTable } from '~/server/database/cache';
+import { warmupCache } from '~/server/utils/cache-warmup';
 
 /**
  * 缓存预热插件
  * 在服务器启动时自动预热热门数据源，避免首次请求慢的问题
  */
 
-// 预热策略配置
+// 预热策略配置（优化版）
 const WARMUP_CONFIG = {
-  // 预热的数据源列表（按优先级）
-  prioritySources: ['weibo', 'zhihu', 'baidu', 'bilibili', 'douyin', 'github'],
+  // 高优先级预热源（用户最常访问）
+  highPriority: ['weibo', 'baidu', 'zhihu', 'bilibili'],
+
+  // 中优先级预热源
+  mediumPriority: ['douyin', 'hupu', 'tieba', 'toutiao', 'ithome', 'xueqiu'],
 
   // 并发预热数量
-  concurrency: 3,
+  concurrency: 2,
 
   // 预热延迟（避免同时请求导致被限流）
-  delayBetweenRequests: 200, // ms
+  delayBetweenRequests: 300, // ms
 
   // 超时时间
-  timeout: 30000,
+  timeout: 20000,
 };
 
 /**
@@ -28,94 +32,7 @@ const WARMUP_CONFIG = {
 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 /**
- * 预热单个数据源
- */
-async function warmupSource(sourceId: string): Promise<boolean> {
-  const config = sourceRegistry.get(sourceId);
-  if (!config) {
-    logger.warn(`预热失败: 数据源 ${sourceId} 不存在`);
-    return false;
-  }
-
-  if (!config.enabled || config.disable) {
-    logger.info(`跳过预热: ${config.name} (${sourceId}) - 已禁用`);
-    return false;
-  }
-
-  if (!config.handler) {
-    logger.warn(`跳过预热: ${config.name} (${sourceId}) - 无处理器`);
-    return false;
-  }
-
-  try {
-    logger.info(`🔄 预热中: ${config.name} (${sourceId})`);
-
-    const startTime = Date.now();
-
-    // 执行数据获取
-    const items = await Promise.race([
-      config.handler(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error('预热超时')), WARMUP_CONFIG.timeout)
-      )
-    ]) as any[];
-
-    const duration = Date.now() - startTime;
-
-    // 保存到缓存
-    const cacheTable = await getCacheTable();
-    if (cacheTable) {
-      await cacheTable.set(sourceId, items);
-      logger.success(`✅ 预热完成: ${config.name} - ${items.length} 条数据 (${duration}ms)`);
-    } else {
-      logger.warn(`⚠️ 缓存不可用: ${config.name}`);
-    }
-
-    return true;
-  } catch (error) {
-    logger.error(`❌ 预热失败: ${config.name} (${sourceId})`, error);
-    return false;
-  }
-}
-
-/**
- * 批量预热数据源（带并发控制）
- */
-async function warmupBatch(sourceIds: string[]): Promise<{ success: number; failed: number }> {
-  const results = { success: 0, failed: 0 };
-
-  // 分批处理，控制并发
-  for (let i = 0; i < sourceIds.length; i += WARMUP_CONFIG.concurrency) {
-    const batch = sourceIds.slice(i, i + WARMUP_CONFIG.concurrency);
-
-    // 并行处理当前批次
-    const batchResults = await Promise.all(
-      batch.map(async (sourceId, index) => {
-        // 在批次内添加延迟，避免同时请求
-        await sleep(index * WARMUP_CONFIG.delayBetweenRequests);
-
-        const success = await warmupSource(sourceId);
-        return success;
-      })
-    );
-
-    // 统计结果
-    batchResults.forEach(success => {
-      if (success) results.success++;
-      else results.failed++;
-    });
-
-    // 批次间延迟
-    if (i + WARMUP_CONFIG.concurrency < sourceIds.length) {
-      await sleep(1000); // 1秒间隔
-    }
-  }
-
-  return results;
-}
-
-/**
- * 智能预热策略
+ * 智能预热策略（分批执行）
  */
 async function smartWarmup() {
   logger.info('🚀 开始缓存预热...');
@@ -130,53 +47,78 @@ async function smartWarmup() {
     return;
   }
 
-  // 2. 优先预热热门数据源
-  const prioritySources = WARMUP_CONFIG.prioritySources.filter(id =>
+  // 2. 高优先级预热源
+  const highPriority = WARMUP_CONFIG.highPriority.filter(id =>
     sourceRegistry.has(id) && sourceRegistry.get(id)?.enabled
   );
 
-  // 3. 其他数据源按需预热（可选）
-  const otherSources = enabledSources
-    .map(s => s.id)
-    .filter(id => !prioritySources.includes(id))
-    .slice(0, 10); // 最多预热10个其他源
+  // 3. 中优先级预热源
+  const mediumPriority = WARMUP_CONFIG.mediumPriority.filter(id =>
+    sourceRegistry.has(id) && sourceRegistry.get(id)?.enabled
+  );
 
-  const totalToWarmup = [...prioritySources, ...otherSources];
+  // 4. 其他数据源（可选，最多5个）
+  const allIds = enabledSources.map(s => s.id);
+  const otherSources = allIds
+    .filter(id => !highPriority.includes(id) && !mediumPriority.includes(id))
+    .slice(0, 5);
 
-  logger.info(`📊 预热计划: ${prioritySources.length} 个热门源 + ${otherSources.length} 个其他源 = ${totalToWarmup.length} 个数据源`);
+  const totalToWarmup = [...highPriority, ...mediumPriority, ...otherSources];
 
-  // 4. 执行预热
-  const results = await warmupBatch(totalToWarmup);
+  logger.info(`📊 预热计划: 高优先级 ${highPriority.length} + 中优先级 ${mediumPriority.length} + 其他 ${otherSources.length} = ${totalToWarmup.length} 个数据源`);
+
+  // 5. 分阶段执行预热（避免启动时请求风暴）
+
+  // 阶段1: 高优先级立即预热
+  if (highPriority.length > 0) {
+    logger.info(`📥 阶段1: 预热高优先级源 (${highPriority.length}个)`);
+    await warmupCache({ sources: highPriority });
+    await sleep(1000); // 间隔1秒
+  }
+
+  // 阶段2: 中优先级延迟预热
+  if (mediumPriority.length > 0) {
+    logger.info(`📥 阶段2: 预热中优先级源 (${mediumPriority.length}个)`);
+    await warmupCache({ sources: mediumPriority });
+    await sleep(1000); // 间隔1秒
+  }
+
+  // 阶段3: 其他源最后预热
+  if (otherSources.length > 0) {
+    logger.info(`📥 阶段3: 预热其他源 (${otherSources.length}个)`);
+    await warmupCache({ sources: otherSources });
+  }
 
   const duration = Date.now() - startTime;
+  logger.info(`✅ 预热完成，总耗时 ${duration}ms`);
 
-  logger.info(`✅ 预热完成: 成功 ${results.success} 个, 失败 ${results.failed} 个, 耗时 ${duration}ms`);
-
-  // 5. 输出预热统计
-  if (results.success > 0) {
-    const cacheTable = await getCacheTable();
-    if (cacheTable) {
-      const cached = await cacheTable.getEntire(prioritySources);
-      const totalItems = cached.reduce((sum, item) => sum + (item.items?.length || 0), 0);
-      logger.info(`📈 缓存统计: ${totalItems} 条热点数据已就绪`);
-    }
+  // 6. 输出缓存统计
+  const cacheTable = await getCacheTable();
+  if (cacheTable && highPriority.length > 0) {
+    const cached = await cacheTable.getEntire(highPriority);
+    const totalItems = cached.reduce((sum, item) => sum + (item.items?.length || 0), 0);
+    logger.info(`📈 缓存统计: ${totalItems} 条热点数据已就绪`);
   }
 }
 
 /**
  * 定时预热（保持缓存新鲜）
+ * 仅预热高优先级源，避免资源浪费
  */
 function scheduleWarmup() {
-  // 每10分钟预热一次热门数据源
+  // 每10分钟预热一次高优先级数据源
   const interval = 10 * 60 * 1000;
 
   setInterval(async () => {
     logger.info('⏰ 定时预热开始...');
-    const prioritySources = WARMUP_CONFIG.prioritySources.filter(id =>
+    const highPriority = WARMUP_CONFIG.highPriority.filter(id =>
       sourceRegistry.has(id) && sourceRegistry.get(id)?.enabled
     );
-    await warmupBatch(prioritySources);
-    logger.info('⏰ 定时预热完成');
+
+    if (highPriority.length > 0) {
+      await warmupCache({ sources: highPriority });
+      logger.info('⏰ 定时预热完成');
+    }
   }, interval);
 }
 
@@ -189,10 +131,10 @@ export default defineNitroPlugin(async () => {
     try {
       await smartWarmup();
 
-      // 启动定时预热
+      // 启动定时预热（仅生产环境）
       if (process.env.NODE_ENV === 'production') {
         scheduleWarmup();
-        logger.info('⏰ 定时预热任务已启动');
+        logger.info('⏰ 定时预热任务已启动 (每10分钟)');
       }
     } catch (error) {
       logger.error('缓存预热失败:', error);

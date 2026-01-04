@@ -18,7 +18,7 @@ export default defineEventHandler(async (event) => {
   const cacheTable = await getCacheTable();
   const now = Date.now();
 
-  // 🔥 优化1: 快速缓存检查（不等待异步操作）
+  // 🔥 优化1: 快速缓存检查（内存优先，文件次之）
   if (!forceRefresh && cacheTable) {
     const cache = await cacheTable.get(id);
     if (cache) {
@@ -29,23 +29,25 @@ export default defineEventHandler(async (event) => {
       const cacheDuration = cache.items?.length > 0 ? 3600000 : 60000;
 
       if (age < cacheDuration) {
-        // 🔥 优化2: 记录缓存命中率
+        // 记录缓存命中率
         const config = sourceRegistry.get(id);
         if (config) {
           sourceRegistry.recordMetrics(id, 0, true);
         }
+
+        // 快速返回，不记录日志（减少IO）
         return cache.items;
       }
     }
   }
 
-  // 🔥 优化3: 并行处理 + 错误快速返回
+  // 🔥 优化2: 错误快速返回 + 超时保护
   try {
     // 添加随机延迟，避免同时请求多个源导致被限流
-    const randomDelay = Math.random() * 300; // 减少到300ms
+    const randomDelay = Math.random() * 300;
     await new Promise(resolve => setTimeout(resolve, randomDelay));
 
-    // 🔥 优化4: 使用 Promise.race 添加超时保护
+    // 使用 Promise.race 添加超时保护
     const items = await Promise.race([
       getHotList(id),
       new Promise((_, reject) =>
@@ -53,18 +55,30 @@ export default defineEventHandler(async (event) => {
       )
     ]) as any[];
 
-    // 异步保存缓存，不阻塞响应
+    // 🔥 优化3: 异步保存缓存，不阻塞响应
     if (cacheTable) {
       cacheTable.set(id, items).catch(err => {
         console.error('缓存保存失败:', err);
       });
     }
 
+    // 记录成功指标
+    const config = sourceRegistry.get(id);
+    if (config) {
+      sourceRegistry.recordMetrics(id, items.length, false);
+    }
+
     return items;
   } catch (error) {
     console.error(`获取 ${id} 数据失败:`, error);
 
-    // 失败时返回空数组，避免前端长时间等待
+    // 🔥 优化4: 失败时返回空数组，避免前端长时间等待
+    // 同时记录失败指标
+    const config = sourceRegistry.get(id);
+    if (config) {
+      sourceRegistry.recordMetrics(id, 0, false, true);
+    }
+
     return [];
   }
 });

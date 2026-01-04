@@ -106,8 +106,7 @@
             @refresh="refreshSource"
             @open-link="openLink"
             @toggle-pin="togglePin"
-            @generate-image="generateImage"
-            @set-element-ref="(el) => (sourceElements[source.id] = el)" />
+            @generate-image="generateImage" />
         </template>
       </div>
 
@@ -164,7 +163,6 @@ const hotItemsBySource = ref({});
 const loadingStates = ref({});
 const initialLoading = ref(false);
 const error = ref(null);
-const sourceElements = ref({});
 const pinnedSources = ref([]);
 const activeColumn = ref("all");
 const allSourcesData = ref({});
@@ -177,6 +175,20 @@ const globalLoading = ref(false);
 
 // 配置
 const SOURCE_PREFERENCE_KEY = "hot-list-preference-v2";
+
+// 数据源优先级分组
+const PRIORITY_GROUPS = {
+  high: ['weibo', 'baidu', 'zhihu', 'bilibili'],  // 前4个优先加载
+  medium: ['douyin', 'hupu', 'tieba', 'toutiao', 'ithome', 'xueqiu'], // 第二批
+  low: ['solidot', 'github', 'sspai', 'v2exnew', 'juejin', 'coolapk', 'kuaishou', 'bbcnews', 'hackernews', 'ifeng', 'jin10', 'gelonghui', 'fastbull', 'wallstreetcn', 'sputniknewscn', 'cankaoxiaoxi', 'pcbeta', 'nowcoder', 'thepaper']  // 最后加载
+};
+
+// 获取优先级
+const getPriority = (sourceId) => {
+  if (PRIORITY_GROUPS.high.includes(sourceId)) return 1;
+  if (PRIORITY_GROUPS.medium.includes(sourceId)) return 2;
+  return 3;
+};
 
 // 获取保存的用户偏好设置
 const getSavedPreference = () => {
@@ -394,54 +406,41 @@ const refreshSource = async (source) => {
   await fetchHotListForSource(source, true);
 };
 
-// 刷新所有源
+// 刷新所有源 - 使用分批刷新
 const refreshAll = async () => {
   if (globalLoading.value) return;
 
   globalLoading.value = true;
   try {
-    const promises = sources.value.map(source =>
-      fetchHotListForSource(source, true).catch(() => {})
-    );
-    await Promise.all(promises);
+    console.log('🔄 开始刷新所有数据源...');
+
+    // 按优先级分组
+    const groupedSources = {
+      high: sources.value.filter(s => PRIORITY_GROUPS.high.includes(s.id)),
+      medium: sources.value.filter(s => PRIORITY_GROUPS.medium.includes(s.id)),
+      low: sources.value.filter(s => !PRIORITY_GROUPS.high.includes(s.id) && !PRIORITY_GROUPS.medium.includes(s.id))
+    };
+
+    // 分批刷新
+    await loadBatch(groupedSources.high, 0);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await loadBatch(groupedSources.medium, 0);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    await loadBatch(groupedSources.low, 0);
+
+    console.log('✅ 所有数据源刷新完成');
+  } catch (err) {
+    console.error('刷新失败:', err);
   } finally {
     globalLoading.value = false;
   }
 };
 
-// 懒加载观察者
-let observer;
-const setupObserver = () => {
-  if (observer) observer.disconnect();
-
-  observer = new IntersectionObserver(
-    (entries) => {
-      for (const entry of entries) {
-        if (entry.isIntersecting) {
-          const sourceId = entry.target.dataset.sourceId;
-          const source = sources.value.find((s) => s.id === sourceId);
-          if (source) {
-            fetchHotListForSource(source);
-            observer.unobserve(entry.target);
-          }
-        }
-      }
-    },
-    { rootMargin: "300px 0px 300px 0px" }
-  );
-
-  const elements = Object.values(sourceElements.value);
-  if (elements.length > 0) {
-    elements.forEach((el) => {
-      if (el) observer.observe(el);
-    });
-  }
-};
-
-// 加载初始数据
+// 加载初始数据 - 分批加载优化版
 const loadInitialData = async () => {
   initialLoading.value = true;
   error.value = null;
+
   try {
     // 1. 先获取数据源列表
     let sourceList = await $fetch("/api/sources");
@@ -464,12 +463,31 @@ const loadInitialData = async () => {
     sortSourcesWithPinning(sourceList, preference.pinned || []);
     sources.value = sourceList;
 
-    // 6. 设置初始 loading 状态（依赖服务器缓存）
-    const initialLoadingStates = {};
-    sourceList.forEach(source => {
-      initialLoadingStates[source.id] = true;
-    });
-    loadingStates.value = initialLoadingStates;
+    // 6. 分批加载数据（核心优化）
+    console.log('🚀 开始分批加载数据源...');
+
+    // 按优先级分组
+    const groupedSources = {
+      high: sourceList.filter(s => PRIORITY_GROUPS.high.includes(s.id)),
+      medium: sourceList.filter(s => PRIORITY_GROUPS.medium.includes(s.id)),
+      low: sourceList.filter(s => !PRIORITY_GROUPS.high.includes(s.id) && !PRIORITY_GROUPS.medium.includes(s.id))
+    };
+
+    // 高优先级立即加载（3-4个）
+    console.log(`📥 高优先级加载: ${groupedSources.high.length} 个源`);
+    await loadBatch(groupedSources.high, 0);
+
+    // 中优先级延迟500ms后加载
+    setTimeout(async () => {
+      console.log(`📥 中优先级加载: ${groupedSources.medium.length} 个源`);
+      await loadBatch(groupedSources.medium, 500);
+
+      // 低优先级再延迟500ms后加载
+      setTimeout(async () => {
+        console.log(`📥 低优先级加载: ${groupedSources.low.length} 个源`);
+        await loadBatch(groupedSources.low, 500);
+      }, 500);
+    }, 500);
 
   } catch (err) {
     console.error("Failed to fetch sources:", err);
@@ -479,13 +497,59 @@ const loadInitialData = async () => {
   }
 };
 
+// 加载一批数据源（带并发控制）
+const loadBatch = async (sourceBatch, delay = 0) => {
+  if (delay > 0) {
+    await new Promise(resolve => setTimeout(resolve, delay));
+  }
+
+  // 限制并发数为3
+  const CONCURRENT_LIMIT = 3;
+  const batches = [];
+
+  for (let i = 0; i < sourceBatch.length; i += CONCURRENT_LIMIT) {
+    batches.push(sourceBatch.slice(i, i + CONCURRENT_LIMIT));
+  }
+
+  // 逐批执行
+  for (const batch of batches) {
+    const promises = batch.map(source => loadSingleSource(source));
+    await Promise.allSettled(promises);
+    // 批次间稍作延迟，避免请求风暴
+    await new Promise(resolve => setTimeout(resolve, 100));
+  }
+};
+
+// 加载单个数据源
+const loadSingleSource = async (source) => {
+  loadingStates.value = { ...loadingStates.value, [source.id]: true };
+
+  try {
+    const items = await $fetch("/api/hot-list", {
+      params: { id: source.id },
+      retry: 1,
+      timeout: 10000
+    });
+
+    hotItemsBySource.value = {
+      ...hotItemsBySource.value,
+      [source.id]: items || [],
+    };
+    console.log(`✅ ${source.name} 加载完成 (${items?.length || 0} 条)`);
+  } catch (err) {
+    console.warn(`❌ ${source.name} 加载失败:`, err.message);
+    hotItemsBySource.value = { ...hotItemsBySource.value, [source.id]: [] };
+  } finally {
+    loadingStates.value = { ...loadingStates.value, [source.id]: false };
+  }
+};
+
 // 重新加载页面
 const reloadPage = () => {
   window.location.reload();
 };
 
 // 监听器
-let observerInitialized = false;
 watch(
   sources,
   (newSources) => {
@@ -495,13 +559,6 @@ watch(
     const validSourceIds = newSources.map(s => s.id);
     const cleaned = cleanInvalidSources({ pinned, layout: layout.value }, validSourceIds);
     savePreference(cleaned.pinned, cleaned.layout);
-
-    if (!observerInitialized) {
-      nextTick(() => {
-        setupObserver();
-        observerInitialized = true;
-      });
-    }
   },
   { deep: true }
 );
@@ -544,7 +601,6 @@ onMounted(() => {
 
   // 清理函数
   onUnmounted(() => {
-    if (observer) observer.disconnect();
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     document.removeEventListener('keydown', handleKeydown);
   });
