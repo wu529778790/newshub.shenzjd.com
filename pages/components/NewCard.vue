@@ -71,7 +71,7 @@
             <!-- 置顶 -->
             <button
               @click="$emit('togglePin', source.id)"
-              class="btn btn-ghost btn-xs btn-circle hover:bg-blue-50 dark:hover:bg-blue-900/30"
+              class="btn btn-ghost btn-xs btn-circle cursor-pointer hover:bg-blue-50 dark:hover:bg-blue-900/30"
               :class="isPinned ? 'text-blue-500' : 'text-slate-400 hover:text-blue-500'"
               :title="isPinned ? '取消置顶' : '置顶'">
               <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
@@ -83,7 +83,7 @@
             <button
               @click="$emit('refresh', source)"
               :disabled="loading"
-              class="btn btn-ghost btn-xs btn-circle hover:bg-green-50 dark:hover:bg-green-900/30 text-slate-400 hover:text-green-500 disabled:opacity-50"
+              class="btn btn-ghost btn-xs btn-circle cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/30 text-slate-400 hover:text-green-500 disabled:opacity-50"
               :class="{ 'animate-spin': loading }"
               :title="`刷新 ${source.name}`">
               <svg v-if="!loading" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,7 +94,7 @@
 
             <!-- 更多菜单 -->
             <div class="dropdown dropdown-end">
-              <label tabindex="0" class="btn btn-ghost btn-xs btn-circle hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-400 hover:text-slate-600">
+              <label tabindex="0" class="btn btn-ghost btn-xs btn-circle cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700/50 text-slate-400 hover:text-slate-600">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
                 </svg>

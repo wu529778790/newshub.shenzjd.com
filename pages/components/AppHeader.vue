@@ -32,7 +32,7 @@
 
           <!-- 刷新按钮 -->
           <button
-            class="btn btn-ghost btn-sm btn-circle"
+            class="btn btn-ghost btn-sm btn-circle cursor-pointer"
             @click="$emit('refresh')"
             :title="props.refreshTitle || '刷新全部'">
             <svg
@@ -51,7 +51,7 @@
           <!-- API 文档按钮 -->
           <NuxtLink
             to="/api"
-            class="btn btn-ghost btn-sm btn-circle"
+            class="btn btn-ghost btn-sm btn-circle cursor-pointer"
             title="API 文档">
             <svg
               class="w-4 h-4"
@@ -71,7 +71,7 @@
             href="https://github.com/wu529778790/newshub.shenzjd.com"
             target="_blank"
             rel="noopener noreferrer"
-            class="btn btn-ghost btn-sm btn-circle"
+            class="btn btn-ghost btn-sm btn-circle cursor-pointer"
             title="GitHub 仓库">
             <svg
               class="w-4 h-4"
@@ -84,7 +84,7 @@
 
           <!-- 主题切换按钮 -->
           <button
-            class="btn btn-ghost btn-sm btn-circle"
+            class="btn btn-ghost btn-sm btn-circle cursor-pointer"
             @click="toggleTheme"
             :title="
               currentTheme === 'light' ? '切换到深色模式' : '切换到浅色模式'

@@ -31,7 +31,7 @@
       <div class="flex items-center space-x-1 flex-shrink-0">
         <!-- 置顶按钮 -->
         <button
-          class="btn btn-ghost btn-sm btn-circle hover:bg-warning/10"
+          class="btn btn-ghost btn-sm btn-circle cursor-pointer hover:bg-warning/10"
           @click="$emit('togglePin', source.id)"
           :title="isPinned ? `取消置顶 ${source.name}` : `置顶 ${source.name}`">
           <svg
@@ -57,7 +57,7 @@
 
         <!-- 刷新按钮 -->
         <button
-          class="btn btn-ghost btn-sm btn-circle hover:bg-primary/10"
+          class="btn btn-ghost btn-sm btn-circle cursor-pointer hover:bg-primary/10"
           @click="$emit('refresh', source)"
           :disabled="loading"
           :title="`刷新 ${source.name}`">

@@ -2,10 +2,10 @@
   <div class="min-h-screen relative overflow-hidden">
     <!-- 动态背景 -->
     <div class="fixed inset-0 -z-10">
-      <div class="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-900 dark:via-blue-950 dark:to-purple-950 transition-colors duration-500"></div>
-      <div class="absolute top-0 left-0 w-full h-full opacity-30 dark:opacity-20">
-        <div class="absolute top-10 left-10 w-72 h-72 bg-blue-400 rounded-full blur-3xl animate-pulse"></div>
-        <div class="absolute bottom-20 right-20 w-96 h-96 bg-purple-400 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s"></div>
+      <div class="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 transition-colors duration-500"></div>
+      <div class="absolute top-0 left-0 w-full h-full opacity-30 dark:opacity-10">
+        <div class="absolute top-10 left-10 w-72 h-72 bg-blue-400 dark:bg-slate-700 rounded-full blur-3xl animate-pulse"></div>
+        <div class="absolute bottom-20 right-20 w-96 h-96 bg-purple-400 dark:bg-slate-700 rounded-full blur-3xl animate-pulse" style="animation-delay: 1s"></div>
       </div>
     </div>
 
@@ -37,7 +37,7 @@
           <div class="flex flex-wrap items-center gap-2">
             <button
               @click="activeColumn = 'all'"
-              class="btn btn-sm md:btn-md gap-2"
+              class="btn btn-sm md:btn-md gap-2 cursor-pointer"
               :class="[
                 activeColumn === 'all'
                   ? 'btn-primary shadow-lg shadow-primary/30'
@@ -50,7 +50,7 @@
               v-for="col in columns"
               :key="col.id"
               @click="activeColumn = col.id"
-              class="btn btn-sm md:btn-md gap-2"
+              class="btn btn-sm md:btn-md gap-2 cursor-pointer"
               :class="[
                 activeColumn === col.id
                   ? 'btn-primary shadow-lg shadow-primary/30'
@@ -65,7 +65,7 @@
           <div class="flex items-center gap-2">
             <button
               @click="toggleLayout"
-              class="btn btn-ghost btn-sm md:btn-md btn-circle"
+              class="btn btn-ghost btn-sm md:btn-md btn-circle cursor-pointer"
               title="切换布局">
               <svg v-if="layout === 'grid'" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 10h16M4 14h16M4 18h16" />
@@ -76,7 +76,7 @@
             </button>
             <button
               @click="showSettings = true"
-              class="btn btn-ghost btn-sm md:btn-md btn-circle"
+              class="btn btn-ghost btn-sm md:btn-md btn-circle cursor-pointer"
               title="设置">
               <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -123,7 +123,7 @@
         <button
           @click="refreshAll"
           :disabled="globalLoading"
-          class="btn btn-primary btn-circle btn-lg shadow-2xl shadow-primary/40"
+          class="btn btn-primary btn-circle btn-lg shadow-2xl shadow-primary/40 cursor-pointer"
           :class="{ 'animate-spin': globalLoading }">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

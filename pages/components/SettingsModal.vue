@@ -13,7 +13,7 @@
           </svg>
           设置
         </h2>
-        <button @click="$emit('close')" class="btn btn-ghost btn-sm btn-circle text-slate-400 hover:text-slate-600">
+        <button @click="$emit('close')" class="btn btn-ghost btn-sm btn-circle cursor-pointer text-slate-400 hover:text-slate-600">
           <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
           </svg>
@@ -29,7 +29,7 @@
           <div class="grid grid-cols-2 gap-3">
             <button
               @click="selectLayout('grid')"
-              class="btn gap-2"
+              class="btn gap-2 cursor-pointer"
               :class="settings.layout === 'grid' ? 'btn-primary' : 'btn-outline'">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -38,7 +38,7 @@
             </button>
             <button
               @click="selectLayout('list')"
-              class="btn gap-2"
+              class="btn gap-2 cursor-pointer"
               :class="settings.layout === 'list' ? 'btn-primary' : 'btn-outline'">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
@@ -54,19 +54,19 @@
           <div class="grid grid-cols-3 gap-3">
             <button
               @click="selectTheme('light')"
-              class="btn gap-2"
+              class="btn gap-2 cursor-pointer"
               :class="settings.theme === 'light' ? 'btn-primary' : 'btn-outline'">
               ☀️ 浅色
             </button>
             <button
               @click="selectTheme('dark')"
-              class="btn gap-2"
+              class="btn gap-2 cursor-pointer"
               :class="settings.theme === 'dark' ? 'btn-primary' : 'btn-outline'">
               🌙 深色
             </button>
             <button
               @click="selectTheme('auto')"
-              class="btn gap-2"
+              class="btn gap-2 cursor-pointer"
               :class="settings.theme === 'auto' ? 'btn-primary' : 'btn-outline'">
               🔄 自动
             </button>
