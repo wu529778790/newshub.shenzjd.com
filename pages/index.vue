@@ -436,7 +436,7 @@ const refreshAll = async () => {
   }
 };
 
-// 加载初始数据 - 分批加载优化版
+// 加载初始数据 - 立即显示 + 后台刷新
 const loadInitialData = async () => {
   initialLoading.value = true;
   error.value = null;
@@ -463,8 +463,8 @@ const loadInitialData = async () => {
     sortSourcesWithPinning(sourceList, preference.pinned || []);
     sources.value = sourceList;
 
-    // 6. 分批加载数据（核心优化）
-    console.log('🚀 开始分批加载数据源...');
+    // 6. 立即开始并行加载数据（控制并发）
+    console.log('🚀 开始并行加载数据源...');
 
     // 按优先级分组
     const groupedSources = {
@@ -473,26 +473,37 @@ const loadInitialData = async () => {
       low: sourceList.filter(s => !PRIORITY_GROUPS.high.includes(s.id) && !PRIORITY_GROUPS.medium.includes(s.id))
     };
 
-    // 高优先级立即加载（3-4个）
-    console.log(`📥 高优先级加载: ${groupedSources.high.length} 个源`);
-    await loadBatch(groupedSources.high, 0);
+    // 立即开始加载所有数据，但控制并发
+    // 高优先级：立即启动
+    const highPromise = loadBatch(groupedSources.high, 0);
 
-    // 中优先级延迟500ms后加载
-    setTimeout(async () => {
-      console.log(`📥 中优先级加载: ${groupedSources.medium.length} 个源`);
-      await loadBatch(groupedSources.medium, 500);
-
-      // 低优先级再延迟500ms后加载
+    // 中优先级：延迟100ms启动（错开请求）
+    const mediumPromise = new Promise(resolve => {
       setTimeout(async () => {
-        console.log(`📥 低优先级加载: ${groupedSources.low.length} 个源`);
-        await loadBatch(groupedSources.low, 500);
-      }, 500);
-    }, 500);
+        await loadBatch(groupedSources.medium, 0);
+        resolve();
+      }, 100);
+    });
+
+    // 低优先级：延迟200ms启动
+    const lowPromise = new Promise(resolve => {
+      setTimeout(async () => {
+        await loadBatch(groupedSources.low, 0);
+        resolve();
+      }, 200);
+    });
+
+    // 不等待全部完成，让数据逐步显示
+    // 但保持一个后台任务来跟踪完成状态
+    Promise.allSettled([highPromise, mediumPromise, lowPromise]).then(() => {
+      console.log('🎉 所有数据源加载完成');
+    });
 
   } catch (err) {
     console.error("Failed to fetch sources:", err);
     error.value = "获取数据源列表失败，请检查网络连接。";
   } finally {
+    // 立即关闭初始加载状态，显示骨架屏
     initialLoading.value = false;
   }
 };
