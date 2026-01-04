@@ -431,13 +431,13 @@ const refreshAll = async () => {
   }
 };
 
-// 加载初始数据 - 按显示顺序 + 懒加载
+// 加载初始数据 - 立即显示 + 后台刷新
 const loadInitialData = async () => {
   initialLoading.value = true;
   error.value = null;
 
   try {
-    // 1. 先获取数据源列表
+    // 1. 先获取数据源列表（这个应该非常快，因为是静态数据）
     let sourceList = await $fetch("/api/sources");
 
     // 2. 获取并清理保存的偏好设置
@@ -458,18 +458,25 @@ const loadInitialData = async () => {
     sortSourcesWithPinning(sourceList, preference.pinned || []);
     sources.value = sourceList;
 
-    // 6. 按顺序加载数据（用户从上到下看到的顺序）
-    console.log('🚀 开始按顺序加载数据源...');
+    // 6. 立即关闭骨架屏，显示卡片结构
+    initialLoading.value = false;
 
-    // 使用 IntersectionObserver 实现懒加载
+    // 7. 后台开始加载数据（不阻塞界面显示）
+    console.log('🚀 开始后台加载数据源...');
+
+    // 设置懒加载观察者
     setupLazyLoadObserver();
 
-    // 立即加载前几个可见的源（首屏）
+    // 立即启动前4个源的加载（首屏）
     const firstBatch = sources.value.slice(0, 4);
-    console.log(`📥 加载首屏数据: ${firstBatch.length}个源`);
-    await loadBatch(firstBatch, 0);
+    console.log(`📥 首屏加载: ${firstBatch.length}个源`);
 
-    // 后台继续加载剩余的源
+    // 不等待，直接启动，让数据逐步显示
+    loadBatch(firstBatch, 0).then(() => {
+      console.log('✅ 首屏数据加载完成');
+    });
+
+    // 500ms后加载剩余源
     const remaining = sources.value.slice(4);
     if (remaining.length > 0) {
       setTimeout(async () => {
@@ -482,8 +489,6 @@ const loadInitialData = async () => {
   } catch (err) {
     console.error("Failed to fetch sources:", err);
     error.value = "获取数据源列表失败，请检查网络连接。";
-  } finally {
-    // 立即关闭初始加载状态，显示骨架屏
     initialLoading.value = false;
   }
 };

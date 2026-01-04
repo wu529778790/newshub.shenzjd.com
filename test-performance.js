@@ -3,7 +3,7 @@
  * 用于验证优化效果
  */
 
-const { performance } = require('perf_hooks');
+import { performance } from 'perf_hooks';
 
 // 模拟测试数据
 const TEST_SOURCES = ['weibo', 'baidu', 'zhihu', 'bilibili'];
