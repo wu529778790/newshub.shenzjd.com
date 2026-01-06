@@ -162,16 +162,30 @@ export default defineNuxtConfig({
   },
 
   // 缓存配置
+  // 注意：EdgeOne 不支持 /** 通配符，缓存规则建议在 EdgeOne 控制台配置
   routeRules: {
-    // 静态资源长期缓存
-    "/_nuxt/**": {
+    // API 响应缓存（具体路径）
+    "/api/v1/sources": {
       headers: {
-        "Cache-Control": "public, max-age=31536000, immutable",
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=30",
       },
     },
-
-    // API 响应缓存
-    "/api/v1/sources/**": {
+    "/api/v1/health": {
+      headers: {
+        "Cache-Control": "public, max-age=300",
+      },
+    },
+    "/api/v1/batch": {
+      headers: {
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=30",
+      },
+    },
+    "/api/latest": {
+      headers: {
+        "Cache-Control": "public, max-age=60, stale-while-revalidate=30",
+      },
+    },
+    "/api/hot-list": {
       headers: {
         "Cache-Control": "public, max-age=60, stale-while-revalidate=30",
       },
