@@ -102,7 +102,7 @@
               <ul tabindex="0" class="dropdown-content menu p-2 shadow bg-base-100 rounded-box w-40 mt-1 text-xs">
                 <li><a @click="$emit('generate-image', source)">📸 生成分享图</a></li>
                 <li><a :href="source.home" target="_blank">🔗 打开官网</a></li>
-                <li><a @click="copyApiUrl(source.id)">📋 复制 API 链接</a></li>
+                <li><a @click="openApiUrl(source.id)">📋 打开 API 链接</a></li>
               </ul>
             </div>
           </div>
@@ -320,15 +320,10 @@ const getRankBadgeStyle = (rank) => {
   return 'bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300'
 }
 
-// 复制 API 链接
-const copyApiUrl = async (sourceId) => {
+// 打开 API 链接
+const openApiUrl = (sourceId) => {
   const url = `${window.location.origin}/api/hot/${sourceId}`
-  try {
-    await navigator.clipboard.writeText(url)
-    alert(`已复制 API 链接:\n${url}`)
-  } catch (err) {
-    console.error('复制失败:', err)
-  }
+  window.open(url, '_blank', 'noopener,noreferrer')
 }
 </script>
 
