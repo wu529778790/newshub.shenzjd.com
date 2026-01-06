@@ -118,15 +118,14 @@
         <button @click="clearSearch" class="btn btn-primary btn-outline">清除搜索</button>
       </div>
 
-      <!-- 悬浮操作按钮 (移动端) -->
-      <div class="fixed bottom-6 right-6 md:hidden z-40">
+      <!-- 悬浮返回顶部按钮 (移动端) -->
+      <div class="fixed bottom-6 right-6 md:hidden z-40" v-if="showScrollTopBtn">
         <button
-          @click="refreshAll"
-          :disabled="globalLoading"
+          @click="scrollToTop"
           class="btn btn-primary btn-circle btn-lg shadow-2xl shadow-primary/40 cursor-pointer"
-          :class="{ 'animate-spin': globalLoading }">
+          title="返回顶部">
           <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
           </svg>
         </button>
       </div>
@@ -601,9 +600,21 @@ watch(
   { deep: true }
 );
 
+// 返回顶部相关
+const showScrollTopBtn = ref(false);
+
+const scrollToTop = () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
 // 生命周期
 onMounted(() => {
   loadInitialData();
+
+  // 滚动显示/隐藏返回顶部按钮
+  const handleScroll = () => {
+    showScrollTopBtn.value = window.scrollY > 300;
+  };
 
   // 页面可见性变化处理
   const handleVisibilityChange = () => {
@@ -618,6 +629,7 @@ onMounted(() => {
     }
   };
 
+  document.addEventListener('scroll', handleScroll);
   document.addEventListener('visibilitychange', handleVisibilityChange);
 
   // 键盘快捷键
@@ -639,6 +651,7 @@ onMounted(() => {
 
   // 清理函数
   onUnmounted(() => {
+    document.removeEventListener('scroll', handleScroll);
     document.removeEventListener('visibilitychange', handleVisibilityChange);
     document.removeEventListener('keydown', handleKeydown);
   });
