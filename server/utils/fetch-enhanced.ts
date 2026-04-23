@@ -88,7 +88,7 @@ export async function enhancedFetch<T = any>(
         return data;
       } catch (error) {
         // 如果是 AbortError，转换为 NetworkError
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           throw new NetworkError(sourceId, url, undefined, {
             reason: 'timeout',
             timeout,
@@ -148,7 +148,7 @@ export async function enhancedFetchRaw(
       } catch (error) {
         clearTimeout(timeoutId);
 
-        if (error.name === 'AbortError') {
+        if (error instanceof Error && error.name === 'AbortError') {
           throw new NetworkError(sourceId, url, undefined, {
             reason: 'timeout',
             timeout,

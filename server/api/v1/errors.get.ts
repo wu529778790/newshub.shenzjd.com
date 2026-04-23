@@ -1,4 +1,8 @@
-import { ErrorHandler } from '~/server/utils/error-handler';
+import {
+  ErrorHandler,
+  type ErrorStat,
+  type ErrorStatsMap,
+} from '~/server/utils/error-handler';
 
 /**
  * GET /api/v1/errors
@@ -13,13 +17,18 @@ export default defineEventHandler((event) => {
 
   // 格式化响应
   const formattedStats = sourceId
-    ? {
+    ? (() => {
+        const sourceStats = stats as ErrorStat | undefined;
+        return {
         sourceId,
-        ...stats,
-        errorTypes: stats?.errorTypes || {},
-        totalErrors: stats ? Object.values(stats.errorTypes).reduce((a, b) => a + b, 0) : 0,
-      }
-    : Object.entries(stats).map(([id, stat]) => ({
+        ...(sourceStats || {}),
+        errorTypes: sourceStats?.errorTypes || {},
+        totalErrors: sourceStats
+          ? Object.values(sourceStats.errorTypes).reduce((a, b) => a + b, 0)
+          : 0,
+      };
+      })()
+    : Object.entries((stats || {}) as ErrorStatsMap).map(([id, stat]) => ({
         sourceId: id,
         ...stat,
         errorTypes: stat.errorTypes,

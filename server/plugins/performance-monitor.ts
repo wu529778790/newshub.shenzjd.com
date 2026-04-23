@@ -8,7 +8,7 @@ import { Profiler } from '~/server/utils/profiler';
 
 export default defineNitroPlugin((nitroApp) => {
   // 监听请求开始
-  nitroApp.hooks.hook('request', (event) => {
+  nitroApp.hooks.hook('request', (event: any) => {
     const path = event.node.req.url || '';
 
     // 只监控 API 请求
@@ -26,7 +26,7 @@ export default defineNitroPlugin((nitroApp) => {
   });
 
   // 监听请求结束
-  nitroApp.hooks.hook('response', (event) => {
+  (nitroApp.hooks as any).hook('response', (event: any) => {
     const path = event.node.req.url || '';
 
     if (path.startsWith('/api/')) {
@@ -45,7 +45,7 @@ export default defineNitroPlugin((nitroApp) => {
   });
 
   // 错误监控
-  nitroApp.hooks.hook('error', (error, event) => {
+  (nitroApp.hooks as any).hook('error', (error: Error, event: any) => {
     const path = event?.node?.req?.url || '';
 
     if (path.startsWith('/api/')) {

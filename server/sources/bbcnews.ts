@@ -9,7 +9,7 @@ export default defineSource(async () => {
 
   const items = feed.rss.channel.item.slice(0, 10);
 
-  return items.map((item) => ({
+  return items.map((item: any) => ({
     id: item.guid,
     title: item.title,
     url: item.link,

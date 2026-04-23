@@ -1,5 +1,6 @@
 import { sourceManager } from '~/server/services/source-manager';
 import { Readable } from 'stream';
+import { logger } from '~/server/utils/logger';
 
 /**
  * GET /api/v1/stream

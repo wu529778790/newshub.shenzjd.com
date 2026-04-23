@@ -502,7 +502,7 @@ export async function withCache<T>(
 /**
  * 缓存预热
  */
-export async function warmupCache(
+export async function warmupMemoryCache(
   sources: Array<{ id: string; fetcher: () => Promise<any> }>,
   options: { concurrency?: number; ttl?: number } = {}
 ): Promise<void> {

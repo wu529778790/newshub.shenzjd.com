@@ -71,11 +71,7 @@ export class ErrorHandler {
   private static instance: ErrorHandler;
 
   // 错误统计
-  private errorStats = new Map<string, {
-    count: number;
-    lastError: number;
-    errorTypes: Record<string, number>;
-  }>();
+  private errorStats = new Map<string, ErrorStat>();
 
   private constructor() {}
 
@@ -96,7 +92,7 @@ export class ErrorHandler {
     options: {
       log?: boolean;
       report?: boolean;
-      retry?: () => Promise<T>;
+      retry?: () => T;
     } = {}
   ): T {
     // 记录错误统计
@@ -237,7 +233,7 @@ export class ErrorHandler {
     if (sourceId) {
       return this.errorStats.get(sourceId);
     }
-    return Object.fromEntries(this.errorStats);
+    return Object.fromEntries(this.errorStats) as ErrorStatsMap;
   }
 
   /**
@@ -334,7 +330,9 @@ export class ErrorClassifier {
     }
     if (error instanceof DataSourceError) {
       // 持续失败需要通知
-      const stats = ErrorHandler.getInstance().getStats(error.sourceId);
+      const stats = ErrorHandler.getInstance().getStats(error.sourceId) as
+        | ErrorStat
+        | undefined;
       if (stats && stats.count > 5) {
         return true;
       }
@@ -342,3 +340,11 @@ export class ErrorClassifier {
     return false;
   }
 }
+
+export interface ErrorStat {
+  count: number;
+  lastError: number;
+  errorTypes: Record<string, number>;
+}
+
+export type ErrorStatsMap = Record<string, ErrorStat>;

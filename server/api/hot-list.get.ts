@@ -7,6 +7,7 @@ export default defineEventHandler(async (event) => {
   const query = getQuery(event);
   const id = query.id as string;
   const forceRefresh = query.refresh === "true";
+  const requestStartedAt = Date.now();
 
   if (!id || !sourcesMap.has(id)) {
     throw createError({
@@ -65,7 +66,7 @@ export default defineEventHandler(async (event) => {
     // 记录成功指标
     const config = sourceRegistry.get(id);
     if (config) {
-      sourceRegistry.recordMetrics(id, items.length, false);
+      sourceRegistry.recordMetrics(id, Date.now() - requestStartedAt, true);
     }
 
     return items;
@@ -76,7 +77,12 @@ export default defineEventHandler(async (event) => {
     // 同时记录失败指标
     const config = sourceRegistry.get(id);
     if (config) {
-      sourceRegistry.recordMetrics(id, 0, false, true);
+      sourceRegistry.recordMetrics(
+        id,
+        Date.now() - requestStartedAt,
+        false,
+        error instanceof Error ? error : new Error(String(error))
+      );
     }
 
     return [];

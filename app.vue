@@ -50,22 +50,21 @@ onMounted(() => {
 
 // 回到顶部功能
 const showScrollTop = ref(false);
+const toggleScrollTop = () => {
+  showScrollTop.value = window.scrollY > 300;
+};
 
 const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: "smooth" });
 };
 
 onMounted(() => {
-  const toggleScrollTop = () => {
-    showScrollTop.value = window.scrollY > 300;
-  };
-
   window.addEventListener("scroll", toggleScrollTop);
   toggleScrollTop(); // 初始化检查
+});
 
-  onUnmounted(() => {
-    window.removeEventListener("scroll", toggleScrollTop);
-  });
+onUnmounted(() => {
+  window.removeEventListener("scroll", toggleScrollTop);
 });
 </script>
 

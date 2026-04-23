@@ -6,6 +6,7 @@ import { sourceRegistry } from "~/server/utils/source-registry";
 export default defineEventHandler(async (event) => {
   // 从路径参数获取 source ID
   const sourceId = getRouterParam(event, 'source');
+  const requestStartedAt = Date.now();
 
   if (!sourceId) {
     throw createError({
@@ -87,7 +88,7 @@ export default defineEventHandler(async (event) => {
     // 记录成功指标
     const config = sourceRegistry.get(sourceId);
     if (config) {
-      sourceRegistry.recordMetrics(sourceId, items.length, false);
+      sourceRegistry.recordMetrics(sourceId, Date.now() - requestStartedAt, true);
     }
 
     // 返回成功响应
@@ -106,7 +107,12 @@ export default defineEventHandler(async (event) => {
     // 同时记录失败指标
     const config = sourceRegistry.get(sourceId);
     if (config) {
-      sourceRegistry.recordMetrics(sourceId, 0, false, true);
+      sourceRegistry.recordMetrics(
+        sourceId,
+        Date.now() - requestStartedAt,
+        false,
+        error instanceof Error ? error : new Error(String(error))
+      );
     }
 
     // 返回错误响应（但不抛出，让前端能处理）

@@ -20,9 +20,11 @@ export function validate<T extends z.ZodTypeAny>(
   const { strict = false } = options;
 
   try {
-    const result = strict
-      ? schema.strict().parse(data)
-      : schema.parse(data);
+    const result = (
+      strict && schema instanceof z.ZodObject
+        ? schema.strict().parse(data)
+        : schema.parse(data)
+    ) as z.infer<T>;
 
     return { success: true, data: result };
   } catch (error) {
@@ -51,9 +53,10 @@ export function safeParse<T extends z.ZodTypeAny>(
   const result = validate(schema, data, options);
 
   if (!result.success) {
+    const errors = (result as { success: false; errors: z.ZodError }).errors;
     if (options?.logError !== false) {
       logger.warn('解析失败，使用默认值:', {
-        errors: result.errors.issues,
+        errors: errors.issues,
         defaultValue,
       });
     }
@@ -83,7 +86,10 @@ export function validateArray<T extends z.ZodTypeAny>(
     if (result.success) {
       valid.push(result.data);
     } else if (!options?.skipInvalid) {
-      invalid.push({ data: item, errors: result.errors });
+      invalid.push({
+        data: item,
+        errors: (result as { success: false; errors: z.ZodError }).errors,
+      });
     }
   });
 
@@ -216,11 +222,12 @@ export function validationMiddleware<T extends z.ZodTypeAny>(
     const result = validate(schema, data);
 
     if (!result.success) {
+      const errors = (result as { success: false; errors: z.ZodError }).errors;
       throw createError({
         statusCode: 400,
         statusMessage: 'Validation failed',
         data: {
-          issues: result.errors.issues,
+          issues: errors.issues,
           message: 'Invalid request parameters',
         },
       });
@@ -341,8 +348,8 @@ export function sanitizeData<T extends z.ZodTypeAny>(
   }
 
   // 对象：尝试修复常见问题
-  if (data && typeof data === 'object') {
-    const cleaned = { ...data };
+  if (data && typeof data === 'object' && schema instanceof z.ZodObject) {
+    const cleaned: Record<string, unknown> = { ...data };
 
     // 根据 schema 要求添加缺失字段
     const shape = schema.shape;
@@ -351,7 +358,9 @@ export function sanitizeData<T extends z.ZodTypeAny>(
         if (fieldSchema instanceof z.ZodOptional) {
           // 可选字段，跳过
         } else if (fieldSchema instanceof z.ZodDefault) {
-          cleaned[key] = fieldSchema._def.defaultValue();
+          const defaultValue = fieldSchema._def.defaultValue;
+          cleaned[key] =
+            typeof defaultValue === "function" ? defaultValue() : defaultValue;
         } else {
           // 无法修复
           return null;

@@ -170,7 +170,7 @@ export class Profiler {
   /**
    * 格式化内存使用
    */
-  static formatMemory(usage: NodeJS.MemoryUsage): string {
+  static formatMemory(usage: NodeJS.MemoryUsage): Record<string, string> {
     return {
       rss: `${(usage.rss / 1024 / 1024).toFixed(2)}MB`,
       heapTotal: `${(usage.heapTotal / 1024 / 1024).toFixed(2)}MB`,

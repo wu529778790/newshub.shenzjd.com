@@ -23,7 +23,7 @@ export class RateLimitManager {
   private store = new Map<string, RateLimitEntry>();
   private cleanupInterval: NodeJS.Timeout;
 
-  constructor(private config: RateLimitConfig) {
+  constructor(public readonly config: RateLimitConfig) {
     // 定期清理过期记录
     this.cleanupInterval = setInterval(() => {
       this.cleanup();

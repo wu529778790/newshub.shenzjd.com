@@ -171,6 +171,7 @@ const layout = ref("grid"); // 'grid' 或 'list'
 const showSearch = ref(false);
 const showSettings = ref(false);
 const globalLoading = ref(false);
+let remainingLoadTimer = null;
 
 // 配置
 const SOURCE_PREFERENCE_KEY = "hot-list-preference-v2";
@@ -409,15 +410,12 @@ const refreshAll = async () => {
   try {
     console.log('🔄 开始刷新所有数据源...');
 
-    // 按当前显示顺序刷新
-    const promises = sources.value.map(source =>
-      loadSingleSource(source).catch(() => {})
-    );
-
     // 控制并发，避免请求风暴
     const BATCH_SIZE = 3;
-    for (let i = 0; i < promises.length; i += BATCH_SIZE) {
-      const batch = promises.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < sources.value.length; i += BATCH_SIZE) {
+      const batch = sources.value
+        .slice(i, i + BATCH_SIZE)
+        .map(source => fetchHotListForSource(source, true).catch(() => {}));
       await Promise.allSettled(batch);
       await new Promise(resolve => setTimeout(resolve, 100)); // 批次间隔
     }
@@ -478,7 +476,7 @@ const loadInitialData = async () => {
     // 500ms后加载剩余源
     const remaining = sources.value.slice(4);
     if (remaining.length > 0) {
-      setTimeout(async () => {
+      remainingLoadTimer = setTimeout(async () => {
         console.log(`📥 后台加载剩余: ${remaining.length}个源`);
         await loadBatch(remaining, 0);
         console.log('🎉 所有数据源加载完成');
@@ -546,7 +544,7 @@ const loadBatch = async (sourceBatch, delay = 0) => {
 
   // 逐批执行
   for (const batch of batches) {
-    const promises = batch.map(source => loadSingleSource(source));
+    const promises = batch.map(source => fetchHotListForSource(source));
     await Promise.allSettled(promises);
     // 批次间延迟
     await new Promise(resolve => setTimeout(resolve, LAZY_LOAD_CONFIG.batchDelay));
@@ -555,30 +553,7 @@ const loadBatch = async (sourceBatch, delay = 0) => {
 
 // 加载单个数据源
 const loadSingleSource = async (source) => {
-  // 避免重复加载
-  if (loadingStates.value[source.id]) return;
-  if (hotItemsBySource.value[source.id]?.length > 0) return;
-
-  loadingStates.value = { ...loadingStates.value, [source.id]: true };
-
-  try {
-    const items = await $fetch("/api/hot-list", {
-      params: { id: source.id },
-      retry: 1,
-      timeout: 10000
-    });
-
-    hotItemsBySource.value = {
-      ...hotItemsBySource.value,
-      [source.id]: items || [],
-    };
-    console.log(`✅ ${source.name} 加载完成 (${items?.length || 0} 条)`);
-  } catch (err) {
-    console.warn(`❌ ${source.name} 加载失败:`, err.message);
-    hotItemsBySource.value = { ...hotItemsBySource.value, [source.id]: [] };
-  } finally {
-    loadingStates.value = { ...loadingStates.value, [source.id]: false };
-  }
+  return fetchHotListForSource(source);
 };
 
 // 重新加载页面
@@ -607,54 +582,50 @@ const scrollToTop = () => {
   window.scrollTo({ top: 0, behavior: 'smooth' });
 };
 
-// 生命周期
+const handleScroll = () => {
+  showScrollTopBtn.value = window.scrollY > 300;
+};
+
+const handleVisibilityChange = () => {
+  if (!document.hidden && sources.value.length > 0) {
+    sources.value.forEach(source => {
+      const items = hotItemsBySource.value[source.id];
+      if (!items || items.length === 0) {
+        console.log(`Page visible, reloading empty source: ${source.id}`);
+        fetchHotListForSource(source, true);
+      }
+    });
+  }
+};
+
+const handleKeydown = (e) => {
+  // Ctrl/Cmd + R: 刷新全部
+  if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
+    e.preventDefault();
+    refreshAll();
+  }
+  // Ctrl/Cmd + F: 聚焦搜索
+  if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
+    e.preventDefault();
+    const searchInput = document.querySelector('input[type="text"]');
+    if (searchInput) searchInput.focus();
+  }
+};
+
 onMounted(() => {
   loadInitialData();
 
-  // 滚动显示/隐藏返回顶部按钮
-  const handleScroll = () => {
-    showScrollTopBtn.value = window.scrollY > 300;
-  };
-
-  // 页面可见性变化处理
-  const handleVisibilityChange = () => {
-    if (!document.hidden && sources.value.length > 0) {
-      sources.value.forEach(source => {
-        const items = hotItemsBySource.value[source.id];
-        if (!items || items.length === 0) {
-          console.log(`Page visible, reloading empty source: ${source.id}`);
-          fetchHotListForSource(source, true);
-        }
-      });
-    }
-  };
-
   document.addEventListener('scroll', handleScroll);
   document.addEventListener('visibilitychange', handleVisibilityChange);
-
-  // 键盘快捷键
-  const handleKeydown = (e) => {
-    // Ctrl/Cmd + R: 刷新全部
-    if ((e.ctrlKey || e.metaKey) && e.key === 'r') {
-      e.preventDefault();
-      refreshAll();
-    }
-    // Ctrl/Cmd + F: 聚焦搜索
-    if ((e.ctrlKey || e.metaKey) && e.key === 'f') {
-      e.preventDefault();
-      const searchInput = document.querySelector('input[type="text"]');
-      if (searchInput) searchInput.focus();
-    }
-  };
-
   document.addEventListener('keydown', handleKeydown);
+});
 
-  // 清理函数
-  onUnmounted(() => {
-    document.removeEventListener('scroll', handleScroll);
-    document.removeEventListener('visibilitychange', handleVisibilityChange);
-    document.removeEventListener('keydown', handleKeydown);
-  });
+onUnmounted(() => {
+  document.removeEventListener('scroll', handleScroll);
+  document.removeEventListener('visibilitychange', handleVisibilityChange);
+  document.removeEventListener('keydown', handleKeydown);
+  if (observer) observer.disconnect();
+  if (remainingLoadTimer) clearTimeout(remainingLoadTimer);
 });
 </script>
 

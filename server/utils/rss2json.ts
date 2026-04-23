@@ -25,7 +25,7 @@ export async function rss2json(url: string): Promise<RSSInfo | undefined> {
     return;
   }
 
-  const rss = {
+  const rss: RSSInfo = {
     title: channel.title ?? "",
     description: channel.description ?? "",
     link: channel.link && channel.link.href ? channel.link.href : channel.link,
@@ -34,7 +34,6 @@ export async function rss2json(url: string): Promise<RSSInfo | undefined> {
       : channel["itunes:image"]
       ? channel["itunes:image"].href
       : "",
-    category: channel.category || [],
     updatedTime: channel.lastBuildDate ?? channel.updated,
     items: [],
   };
@@ -46,7 +45,7 @@ export async function rss2json(url: string): Promise<RSSInfo | undefined> {
     const val = items[i];
     const media = {};
 
-    const obj = {
+    const obj: Record<string, any> = {
       id: val.guid && val.guid.$text ? val.guid.$text : val.id,
       title:
         val.title && typeof val.title === "object" && val.title.$text
@@ -82,8 +81,10 @@ export async function rss2json(url: string): Promise<RSSInfo | undefined> {
       "itunes:episodeType",
       "itunes:image",
     ].forEach((s) => {
-      // @ts-expect-error TODO
-      if (val[s]) obj[s.replace(":", "_")] = val[s];
+      const namespacedValue = (val as Record<string, unknown>)[s];
+      if (namespacedValue) {
+        obj[s.replace(":", "_")] = namespacedValue;
+      }
     });
 
     if (val["media:thumbnail"]) {
@@ -112,8 +113,7 @@ export async function rss2json(url: string): Promise<RSSInfo | undefined> {
 
     Object.assign(obj, { media });
 
-    // @ts-expect-error TODO
-    rss.items.push(obj);
+    rss.items.push(obj as any);
   }
 
   return rss;

@@ -3,20 +3,20 @@
  * 自动记录所有请求到日志系统
  */
 
-import { requestLogger, useRequestLogger } from '~/server/utils/request-logger';
+import { requestLogger } from '~/server/utils/request-logger';
 
 export default defineNitroPlugin((nitroApp) => {
   // 使用中间件记录请求
   nitroApp.hooks.hook('request', (event) => {
     // 为请求添加日志记录
-    const originalEnd = event.node.res.end;
+    const originalEnd = event.node.res.end.bind(event.node.res);
     const start = Date.now();
 
-    event.node.res.end = function (...args: any[]) {
+    event.node.res.end = ((...args: any[]) => {
       const duration = Date.now() - start;
       requestLogger.log(event, duration);
-      return originalEnd.apply(this, args);
-    };
+      return originalEnd(...args);
+    }) as typeof event.node.res.end;
   });
 
   // 日志清理定时器（每天凌晨清理一次）

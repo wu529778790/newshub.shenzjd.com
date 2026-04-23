@@ -89,7 +89,7 @@ export const ApiResponseSchema = z.object({
   status: z.enum(['success', 'error']).optional(),
   message: z.string().optional(),
   data: z.array(NewsItemSchema).optional(),
-  meta: z.record(z.any()).optional().describe('元数据'),
+  meta: z.record(z.string(), z.any()).optional().describe('元数据'),
 });
 
 export type ApiResponse = z.infer<typeof ApiResponseSchema>;
@@ -123,7 +123,7 @@ export const SourceMetricsSchema = z.object({
   avgResponseTime: z.number().default(0),
   lastSuccess: z.number().nullable().default(null),
   lastError: z.number().nullable().default(null),
-  errorTypes: z.record(z.number()).default({}),
+  errorTypes: z.record(z.string(), z.number()).default({}),
 });
 
 export type SourceMetrics = z.infer<typeof SourceMetricsSchema>;

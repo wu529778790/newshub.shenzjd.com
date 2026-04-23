@@ -192,7 +192,7 @@ export class RateLimiter {
  */
 export class BatchProcessor<T, R> {
   private batchSize: number;
-  private processFn: (batch: T[]) => Promise<R[]>;
+  private processFn!: (batch: T[]) => Promise<R[]>;
   private concurrency: number;
 
   constructor(

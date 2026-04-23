@@ -11,7 +11,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const sources = genSources();
-  const source = sources[id];
+  const source = sources[id as keyof typeof sources];
 
   if (!source) {
     throw createError({
@@ -21,9 +21,9 @@ export default defineEventHandler(async (event) => {
   }
 
   const hotListApi = `/api/hot-list?id=${id}`;
-  const data = await $fetch(hotListApi).catch(() => []);
+  const data = await $fetch<unknown>(hotListApi).catch(() => []);
 
-  if (!data || data.length === 0) {
+  if (!isNewsItemList(data) || data.length === 0) {
     throw createError({
       statusCode: 404,
       statusMessage: "No data available for image generation",
@@ -36,7 +36,24 @@ export default defineEventHandler(async (event) => {
   event.node.res.end(html);
 });
 
-function generateImageHTML(source: any, items: any[]) {
+type ImageSource = {
+  name?: string;
+  title?: string;
+  color?: string;
+};
+
+type ImageItem = {
+  title?: string;
+  extra?: {
+    info?: string;
+  };
+};
+
+function isNewsItemList(data: unknown): data is ImageItem[] {
+  return Array.isArray(data);
+}
+
+function generateImageHTML(source: ImageSource, items: ImageItem[]) {
   const topItems = items.slice(0, 10);
   const timestamp = new Date().toLocaleString('zh-CN');
 
@@ -51,7 +68,7 @@ function generateImageHTML(source: any, items: any[]) {
     primary: { start: '#6366f1', end: '#4f46e5', bg: '#e0e7ff', text: '#4f46e5' },
   };
 
-  const colors = colorMap[source.color] || colorMap.primary;
+  const colors = colorMap[source.color || "primary"] || colorMap.primary;
 
   const itemsHtml = topItems.map((item, index) => {
     const rankBg = index === 0 ? '#fbbf24' : index === 1 ? '#94a3b8' : index === 2 ? '#f97316' : colors.bg;
@@ -61,7 +78,7 @@ function generateImageHTML(source: any, items: any[]) {
         <div class="item">
           <div class="rank" style="background: ${rankBg}; color: ${rankColor}">${index + 1}</div>
           <div>
-            <div class="title">${escapeHtml(item.title)}</div>
+            <div class="title">${escapeHtml(item.title || "")}</div>
             ${item.extra?.info ? `<div class="extra">${escapeHtml(item.extra.info)}</div>` : ''}
           </div>
         </div>`;
@@ -72,7 +89,7 @@ function generateImageHTML(source: any, items: any[]) {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>${source.name} - 热点分享图</title>
+      <title>${escapeHtml(source.name || "NewsHub")} - 热点分享图</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, ${colors.start} 0%, ${colors.end} 100%); min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 20px; }
@@ -94,8 +111,8 @@ function generateImageHTML(source: any, items: any[]) {
 <body>
   <div class="card">
     <div class="header">
-      <h1>${source.name}</h1>
-      <div class="subtitle">${source.title || '热点聚合'}</div>
+      <h1>${escapeHtml(source.name || "NewsHub")}</h1>
+      <div class="subtitle">${escapeHtml(source.title || "热点聚合")}</div>
       <div class="timestamp">生成时间: ${timestamp}</div>
     </div>
     <div class="content">${itemsHtml}</div>
@@ -109,6 +126,11 @@ function generateImageHTML(source: any, items: any[]) {
 }
 
 function escapeHtml(text: string): string {
-  if (!text) return '';
-  return text.replace(/&/g, '&').replace(/</g, '<').replace(/>/g, '>');
+  if (!text) return "";
+  return text
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }

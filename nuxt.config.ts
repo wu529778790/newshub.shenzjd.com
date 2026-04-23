@@ -129,9 +129,6 @@ export default defineNuxtConfig({
 
     // 响应式组件
     viewTransition: true,
-
-    // 优化客户端路由
-    clientRouteCache: true,
   },
 
   // 优化打包

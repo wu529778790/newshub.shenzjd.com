@@ -66,7 +66,7 @@ export class RequestLogger {
   /**
    * 获取客户端 IP
    */
-  private getClientIP(req: any): string | null {
+  private getClientIP(req: any): string | undefined {
     const forwarded = req.headers['x-forwarded-for'];
     if (forwarded) {
       return (typeof forwarded === 'string' ? forwarded : forwarded[0]).split(',')[0].trim();
@@ -75,7 +75,7 @@ export class RequestLogger {
     const realIP = req.headers['x-real-ip'];
     if (realIP) return realIP;
 
-    return req.socket?.remoteAddress || null;
+    return req.socket?.remoteAddress || undefined;
   }
 
   /**

@@ -48,7 +48,7 @@ export default defineSource(async () => {
       if (timeText && timeText !== "刚刚") {
         try {
           const parsed = parseRelativeDate(timeText, "Asia/Shanghai");
-          pubDate = typeof parsed === "number" ? parsed : parsed.valueOf();
+          pubDate = typeof parsed === "number" ? parsed : new Date(parsed).getTime();
         } catch (e) {
           pubDate = new Date().getTime();
         }

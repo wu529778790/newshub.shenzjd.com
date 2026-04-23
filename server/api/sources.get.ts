@@ -7,7 +7,7 @@ export default defineEventHandler(() => {
 
   // 转换为前端需要的格式，保留 column 信息
   return sources.map(source => {
-    const fullSource = fullSources[source.id];
+    const fullSource = fullSources[source.id as keyof typeof fullSources];
     return {
       id: source.id,
       name: source.name,
