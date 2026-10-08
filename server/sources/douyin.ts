@@ -8,6 +8,9 @@ interface Res {
       word: string;
       event_time: string;
       hot_value: string;
+      sentence_tag?: number;
+      label?: number;
+      word_sub_board?: number[] | null;
     }[];
   };
 }
@@ -51,6 +54,9 @@ export default defineSource({
         extra: {
           info: `热度: ${k.hot_value}`,
           date: k.event_time,
+          sentence_tag: k.sentence_tag,
+          label: k.label,
+          word_sub_board: k.word_sub_board,
         },
       }));
     } catch (error) {

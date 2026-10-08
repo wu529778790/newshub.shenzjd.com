@@ -9,6 +9,8 @@ interface WeiboResponse {
       word_scheme: string;
       num: number;
       topic_flag: number;
+      flag_desc?: string;
+      is_ad?: number;
       icon_desc?: string;
       icon?: string;
     }>;
@@ -46,6 +48,9 @@ export default defineSource({
           extra: {
             info: `热度: ${item.num.toLocaleString()}`,
             rank: index + 1,
+            flag_desc: item.flag_desc,
+            topic_flag: item.topic_flag,
+            is_ad: item.is_ad,
           },
         }));
     } catch (error) {
